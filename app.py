@@ -8,6 +8,7 @@ from config import (
     BRAND_IMAGE_PATH,
     CCC_RESOURCES_FILE_PATH,
     EXCEL_FILE_PATH,
+    ORG_STRUCTURE_FILE_PATH,
     RISK_TRACKER_FILE_PATH,
     SWA_IMAGE_PATH,
 )
@@ -21,6 +22,7 @@ from data_loader import (
     load_detail1,
 )
 from team_structure import render_team_structure
+from org_structure import render_org_structure
 
 st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide", initial_sidebar_state="expanded")
 
@@ -335,7 +337,7 @@ if st.session_state.dashboard_section is None:
     st.stop()
 
 selected_section = st.session_state.dashboard_section
-if selected_section != "Team structure":
+if selected_section not in ("Team structure", "ORG Structure"):
     st.markdown('<div class="eyebrow">SWA / workforce planning</div>', unsafe_allow_html=True)
     st.title(selected_section)
 
@@ -397,6 +399,11 @@ elif selected_section == "Billability":
 elif selected_section == "Team structure":
     try:
         render_team_structure(CCC_RESOURCES_FILE_PATH)
+    except (FileNotFoundError, ValueError) as error:
+        st.error(str(error))
+elif selected_section == "ORG Structure":
+    try:
+        render_org_structure(ORG_STRUCTURE_FILE_PATH)
     except (FileNotFoundError, ValueError) as error:
         st.error(str(error))
 else:

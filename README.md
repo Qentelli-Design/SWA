@@ -9,6 +9,7 @@ A focused Streamlit dashboard that reads the `Detail1` worksheet and presents wo
 - `Resource pulse`: Total Resources, Onsite, Offshore, Project, Portfolio, Wave, and OnBoarding Status
 - `Billability`: resource counts grouped by the Excel `Billability` column
 - `Team structure`
+- `ORG Structure`: interactive Reporting Manager to Resource Name hierarchy from `CCC_Resources.xlsx`
 - `Skills`
 - `Certifications`
 - `Project delivery status`
