@@ -6,6 +6,7 @@ import streamlit as st
 
 REQUIRED_COLUMNS = ["Portfolio", "Product", "Resource Name", "Location", "Role", "Vendor"]
 LEADERSHIP_DISPLAY_ORDER = [
+    "Siva Rao Kompella S V",
     "B Ramesh",
     "Swetha Gundimeda",
     "Kanti Yalavarthy",
@@ -115,22 +116,38 @@ def render_lead_card(resource: pd.Series) -> None:
 def render_governance_section(governance: pd.DataFrame) -> None:
     governance_by_name = governance.set_index("Resource Name")
     leadership_rows = []
-    for name in LEADERSHIP_DISPLAY_ORDER:
-        if name not in governance_by_name.index:
+    for index, name in enumerate(LEADERSHIP_DISPLAY_ORDER):
+        if name != "Siva Rao Kompella S V" and name not in governance_by_name.index:
             continue
-        resource = governance_by_name.loc[name]
         is_swetha = name == "Swetha Gundimeda"
         person_class = "governance-primary" if is_swetha else "governance-secondary"
         if name == "B Ramesh":
+            person_class = "governance-head"
+        if name == "Siva Rao Kompella S V":
             person_class = "governance-featured"
+        if name == "Kanti Yalavarthy":
+            person_class = "governance-kanti"
+        arrow_class = {
+            "B Ramesh": "arrow-ramesh",
+            "Swetha Gundimeda": "arrow-swetha",
+            "Kanti Yalavarthy": "arrow-kanti",
+        }.get(name, "")
+        arrow = "" if index == 0 else f"<div class='leadership-arrow {arrow_class}'>↓</div>"
+        level_class = {
+            "B Ramesh": "leadership-ramesh",
+            "Swetha Gundimeda": "leadership-swetha",
+            "Kanti Yalavarthy": "leadership-kanti",
+        }.get(name, "")
         leadership_rows.append(
-            f"<div class='governance-person {person_class}'>"
+            arrow +
+            f"<div class='governance-person {person_class} {level_class}'>"
             f"<span class='governance-name'>{name}</span>"
             "</div>"
         )
     st.markdown(
         "<div class='governance-card'><div class='governance-heading'>CCC Leadership</div>"
-        "<div class='governance-people'>" + "".join(leadership_rows) + "</div></div>",
+        "<div class='governance-people'>" + "".join(leadership_rows) + "</div></div>"
+        "<div class='leadership-gap'></div>",
         unsafe_allow_html=True,
     )
 
@@ -218,13 +235,26 @@ def _render_styles() -> None:
         }
         .governance-card { background: #f5f8f7; border: 1px solid #c8ddda; border-left: 4px solid #087f8c; border-radius: 8px; margin: 0 0 0.55rem; padding: 0.45rem 0.75rem; }
         .governance-label { color: #426782; }
-        .governance-people { display: flex; gap: 0.6rem; }
-        .governance-person { align-items: baseline; background: #ffffff; border: 1px solid #dfe7e9; border-radius: 6px; display: flex; flex: 1; gap: 0.65rem; padding: 0.35rem 0.5rem; }
-        .governance-name { color: #183342; font-size: 0.85rem; font-weight: 800; }
+        .governance-people { display: flex; flex-direction: column; gap: 0.3rem; }
+        .governance-person { align-items: baseline; background: #ffffff; border: 1px solid #dfe7e9; border-radius: 6px; display: flex; gap: 0.65rem; padding: 0.35rem 0.5rem; }
+        .governance-name { color: #183342; font-size: 0.95rem; font-weight: 800; }
+        .leadership-ramesh { margin-left: 60px; }
+        .leadership-swetha { margin-left: 120px; }
+        .leadership-kanti { margin-left: 180px; }
+        .leadership-arrow { color: #7b9294; font-size: 0.9rem; font-weight: 800; height: 0.65rem; line-height: 0.65rem; margin-left: 31px; text-align: left; }
+        .leadership-arrow { margin-left: 100px; }
+        .arrow-swetha { margin-left: 150px; }
+        .arrow-kanti { margin-left: 220px; }
+        .governance-head { background: #e7f2f1; border-color: #75bcb4; }
+        .governance-head .governance-name { color: #075f69; }
         .governance-primary { border-color: #8fcfc8; }
-        .governance-primary .governance-name { color: #087f8c; }
-        .governance-featured { background: #fff7ed; border-color: #e5b77e; }
-        .governance-featured .governance-name { color: #9a5b16; }
+        .governance-primary { background: #f4f8ef; border-color: #cfdfc1; }
+        .governance-primary .governance-name { color: #5b704c; }
+        .governance-featured { background: #eef1fb; border-color: #bcc7e8; }
+        .governance-featured .governance-name { color: #43558d; }
+        .governance-kanti { background: #f2f7fc; border-color: #cbdced; }
+        .governance-kanti .governance-name { color: #58718a; }
+        .leadership-gap { height: 15px; }
         .governance-role { color: #65727d; font-size: 0.8rem; }
         .governance-role { color: #526d7b; font-size: 0.88rem; margin-top: 0.2rem; }
         .team-heading { border-bottom: 2px solid #dfe7e9; font-size: 0.95rem; font-weight: 700; margin: 0 0 0.5rem; padding-bottom: 0.35rem; }

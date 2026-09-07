@@ -202,8 +202,7 @@ def _render_reporting_branch(node: dict) -> None:
 
 def render_org_chart(hierarchy: dict) -> None:
     st.markdown(
-        f"<div class='org-root-card'><div class='org-root-label'>Organization root</div>"
-        f"<div class='org-root-name'>{escape(_node_display(hierarchy))}</div></div>",
+        f"<div class='org-root-card'><div class='org-root-name'>{escape(_node_display(hierarchy))}</div></div>",
         unsafe_allow_html=True,
     )
     st.markdown("<div class='org-branch-label'>Direct reports</div>", unsafe_allow_html=True)
