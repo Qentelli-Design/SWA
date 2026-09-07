@@ -181,6 +181,12 @@ def _render_resource_card(node: dict) -> None:
     )
 
 
+def _ordered_children(node: dict) -> list[dict]:
+    managers = [child for child in node["children"] if child["children"]]
+    individual_contributors = [child for child in node["children"] if not child["children"]]
+    return managers + individual_contributors
+
+
 def _render_reporting_branch(node: dict) -> None:
     if not node["children"]:
         _render_resource_card(node)
@@ -190,7 +196,7 @@ def _render_reporting_branch(node: dict) -> None:
     label = f"{_node_display(node)}  ·  {report_count} reporting resource{'s' if report_count != 1 else ''}"
     with st.expander(label, expanded=False):
         st.markdown("<div class='org-manager-note'>Reporting resources</div>", unsafe_allow_html=True)
-        for child in node["children"]:
+        for child in _ordered_children(node):
             _render_reporting_branch(child)
 
 
@@ -201,7 +207,7 @@ def render_org_chart(hierarchy: dict) -> None:
         unsafe_allow_html=True,
     )
     st.markdown("<div class='org-branch-label'>Direct reports</div>", unsafe_allow_html=True)
-    for child in hierarchy["children"]:
+    for child in _ordered_children(hierarchy):
         _render_reporting_branch(child)
 
 

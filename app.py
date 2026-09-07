@@ -260,7 +260,7 @@ except ValueError as error:
 sections = [
     "Resource pulse",
     "Billability",
-    "Team structure",
+    "Team Structure",
     "Skills",
     "Certifications",
     "Project delivery status",
@@ -337,7 +337,7 @@ if st.session_state.dashboard_section is None:
     st.stop()
 
 selected_section = st.session_state.dashboard_section
-if selected_section not in ("Team structure", "ORG Structure"):
+if selected_section not in ("Team Structure", "ORG Structure"):
     st.markdown('<div class="eyebrow">SWA / workforce planning</div>', unsafe_allow_html=True)
     st.title(selected_section)
 
@@ -396,7 +396,7 @@ elif selected_section == "Billability":
         )
     billability = build_billability_summary(EXCEL_FILE_PATH)
     render_summary_chart("Billability", billability, "Billability", "#087f8c", "No billability data was found in Detail1.")
-elif selected_section == "Team structure":
+elif selected_section == "Team Structure":
     try:
         render_team_structure(CCC_RESOURCES_FILE_PATH)
     except (FileNotFoundError, ValueError) as error:

@@ -5,6 +5,11 @@ import streamlit as st
 
 
 REQUIRED_COLUMNS = ["Portfolio", "Product", "Resource Name", "Location", "Role", "Vendor"]
+LEADERSHIP_DISPLAY_ORDER = [
+    "B Ramesh",
+    "Swetha Gundimeda",
+    "Kanti Yalavarthy",
+]
 
 
 @st.cache_data(show_spinner=False)
@@ -108,12 +113,19 @@ def render_lead_card(resource: pd.Series) -> None:
 
 
 def render_governance_section(governance: pd.DataFrame) -> None:
+    governance_by_name = governance.set_index("Resource Name")
     leadership_rows = []
-    for _, resource in governance.iterrows():
-        is_swetha = resource["Resource Name"] == "Swetha Gundimeda"
+    for name in LEADERSHIP_DISPLAY_ORDER:
+        if name not in governance_by_name.index:
+            continue
+        resource = governance_by_name.loc[name]
+        is_swetha = name == "Swetha Gundimeda"
+        person_class = "governance-primary" if is_swetha else "governance-secondary"
+        if name == "B Ramesh":
+            person_class = "governance-featured"
         leadership_rows.append(
-            f"<div class='governance-person {'governance-primary' if is_swetha else 'governance-secondary'}'>"
-            f"<span class='governance-name'>{resource['Resource Name']}</span>"
+            f"<div class='governance-person {person_class}'>"
+            f"<span class='governance-name'>{name}</span>"
             "</div>"
         )
     st.markdown(
@@ -198,7 +210,7 @@ def _render_styles() -> None:
         .section-title { color: #173c43; font-size: 1.35rem; font-weight: 700; margin: 0.1rem 0 0.55rem; }
         .product-divider { border-top: 1px solid #dfe7e9; margin: 0.75rem 0 0.6rem; }
         .product-title h2 { color: #173c43; font-size: 1.3rem; margin: 0.1rem 0 0.55rem; }
-        .governance-heading { color: #173c43; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.08em; margin: 0 0 0.35rem; text-transform: uppercase; }
+        .governance-heading { color: #173c43; font-size: 0.87rem; font-weight: 800; letter-spacing: 0.08em; margin: 0 0 0.35rem; text-align: center; text-transform: uppercase; }
         .governance-card, .team-card, .lead-card {
             border-radius: 8px;
             margin: 0 0 0.35rem;
@@ -211,6 +223,8 @@ def _render_styles() -> None:
         .governance-name { color: #183342; font-size: 0.85rem; font-weight: 800; }
         .governance-primary { border-color: #8fcfc8; }
         .governance-primary .governance-name { color: #087f8c; }
+        .governance-featured { background: #fff7ed; border-color: #e5b77e; }
+        .governance-featured .governance-name { color: #9a5b16; }
         .governance-role { color: #65727d; font-size: 0.8rem; }
         .governance-role { color: #526d7b; font-size: 0.88rem; margin-top: 0.2rem; }
         .team-heading { border-bottom: 2px solid #dfe7e9; font-size: 0.95rem; font-weight: 700; margin: 0 0 0.5rem; padding-bottom: 0.35rem; }
