@@ -9,6 +9,7 @@ from config import (
     CCC_RESOURCES_FILE_PATH,
     EXCEL_FILE_PATH,
     ORG_STRUCTURE_FILE_PATH,
+    PROJECT_DELIVERY_STATUS_FILE_PATH,
     RISK_TRACKER_FILE_PATH,
     SWA_IMAGE_PATH,
 )
@@ -23,6 +24,7 @@ from data_loader import (
 )
 from team_structure import render_team_structure
 from org_structure import render_org_structure
+from project_delivery_status import render_project_delivery_status
 
 st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide", initial_sidebar_state="expanded")
 
@@ -263,7 +265,7 @@ sections = [
     "Team Structure",
     "Skills",
     "Certifications",
-    "Project delivery status",
+    "Project Delivery Status",
     "ORG Structure",
     "Risks",
 ]
@@ -337,7 +339,7 @@ if st.session_state.dashboard_section is None:
     st.stop()
 
 selected_section = st.session_state.dashboard_section
-if selected_section not in ("Team Structure", "ORG Structure"):
+if selected_section not in ("Team Structure", "ORG Structure", "Project Delivery Status"):
     st.markdown('<div class="eyebrow">SWA / workforce planning</div>', unsafe_allow_html=True)
     st.title(selected_section)
 
@@ -404,6 +406,11 @@ elif selected_section == "Team Structure":
 elif selected_section == "ORG Structure":
     try:
         render_org_structure(ORG_STRUCTURE_FILE_PATH)
+    except (FileNotFoundError, ValueError) as error:
+        st.error(str(error))
+elif selected_section == "Project Delivery Status":
+    try:
+        render_project_delivery_status(PROJECT_DELIVERY_STATUS_FILE_PATH)
     except (FileNotFoundError, ValueError) as error:
         st.error(str(error))
 else:

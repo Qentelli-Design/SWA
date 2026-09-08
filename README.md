@@ -12,7 +12,7 @@ A focused Streamlit dashboard that reads the `Detail1` worksheet and presents wo
 - `ORG Structure`: interactive Reporting Manager to Resource Name hierarchy from `CCC_Resources.xlsx`
 - `Skills`
 - `Certifications`
-- `Project delivery status`
+- `Project Delivery Status`: dynamic product health cards and activity details from `Product_Status_Report.xlsx`
 - `Milestones`
 - `Risks`
 
@@ -31,6 +31,7 @@ python -m streamlit run app.py
 The default paths are repository-relative. Place these files in the project folder when you need the corresponding dashboard sections:
 
 - `CCC_Resources.xlsx` for `Team structure` and its `Resource List` sheet
+- `Product_Status_Report.xlsx` for `Project Delivery Status`, with one product per sheet
 - `SWA Consolidated sheet.xlsx` for the existing `Resource pulse` and `Billability` sections, including `Detail1`
 - `Risk_Tracker.xlsx` for the `Risks` section, including `Risk Tracker`
 - `Qentelli.jpg` and `swa.jpg` for the optional dashboard images
