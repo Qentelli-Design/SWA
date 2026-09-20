@@ -46,6 +46,7 @@ def clean_data(frame: pd.DataFrame) -> pd.DataFrame:
         & cleaned["Reporting Manager"].ne("")
         & ~cleaned["Vendor"].str.casefold().eq("rebadge")
     ].copy()
+    cleaned = cleaned.drop_duplicates(subset=["Resource Name", "Product", "Reporting Manager"]).copy()
     cleaned["Person Key"] = cleaned["Resource Name"].map(_person_key)
     cleaned["Manager Key"] = cleaned["Reporting Manager"].map(_person_key)
     return cleaned.reset_index(drop=True)
@@ -79,7 +80,8 @@ def get_direct_reports(
 ) -> list[dict[str, str]]:
     unique_reports = {}
     for report in relationships.get(manager_key, []):
-        unique_reports.setdefault(report["person_key"], report)
+        unique_key = (report["person_key"], report.get("product", ""))
+        unique_reports.setdefault(unique_key, report)
     return list(unique_reports.values())
 
 
@@ -88,12 +90,10 @@ def identify_managers(relationships: dict[str, list[dict[str, str]]]) -> set[str
 
 
 def _resource_lookup(frame: pd.DataFrame) -> dict[str, dict[str, str]]:
-    lookup = {}
+    lookup: dict[tuple[str, str], dict[str, str]] = {}
     for _, row in frame.iterrows():
-        lookup.setdefault(
-            row["Person Key"],
-            {"name": row["Resource Name"], "product": row["Product"]},
-        )
+        key = (row["Person Key"], row["Product"])
+        lookup.setdefault(key, {"name": row["Resource Name"], "product": row["Product"]})
     return lookup
 
 
@@ -103,8 +103,8 @@ def build_hierarchy(frame: pd.DataFrame) -> dict:
     resource_lookup = _resource_lookup(frame)
     root_key = _person_key(ROOT_NAME)
 
-    def make_node(person_key: str, name: str, product: str, visited: frozenset[str]) -> dict:
-        resource = resource_lookup.get(person_key, {"name": name, "product": product})
+    def make_node(person_key: str, name: str, product: str, visited: frozenset[tuple[str, str]]) -> dict:
+        resource = resource_lookup.get((person_key, product), {"name": name, "product": product})
         node = {
             "key": person_key,
             "name": resource["name"],
@@ -112,12 +112,13 @@ def build_hierarchy(frame: pd.DataFrame) -> dict:
             "is_manager": person_key in managers,
             "children": [],
         }
-        if person_key in visited:
+        if (person_key, product) in visited:
             return node
 
-        next_visited = visited | {person_key}
+        next_visited = visited | {(person_key, product)}
         for report in get_direct_reports(person_key, relationships):
-            if report["person_key"] not in next_visited:
+            report_key = (report["person_key"], report.get("product", ""))
+            if report_key not in next_visited:
                 node["children"].append(
                     make_node(
                         report["person_key"],

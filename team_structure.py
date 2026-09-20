@@ -153,7 +153,7 @@ def render_governance_section(governance: pd.DataFrame) -> None:
 
 
 def render_product_summary(product_frame: pd.DataFrame) -> None:
-    product_team = product_frame[~_governance_mask(product_frame)].drop_duplicates(subset=["Resource Name"])
+    product_team = product_frame[~_governance_mask(product_frame)].copy()
     onsite = product_team[product_team["Location Normalized"].eq("Onsite")]
     offshore = product_team[product_team["Location Normalized"].eq("Offshore")]
     metrics = [

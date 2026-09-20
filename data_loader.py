@@ -83,19 +83,38 @@ def build_location_summary(file_path: str, location_name: str, group_by: str = "
 
 
 @st.cache_data(show_spinner=False)
-def build_billability_summary(file_path: str, group_by: str = "Billability") -> pd.DataFrame:
-    frame = load_detail1(file_path)
-    group_col = group_by if group_by in frame.columns else "Billability"
-    if group_col not in frame.columns:
-        return pd.DataFrame(columns=["Billability", "Resources"])
+def build_billability_summary(file_path: str, group_by: str = "Billability") -> tuple[pd.DataFrame, pd.DataFrame]:
+    # Billability is sourced from the CCC resources workbook 'Resource List' sheet
+    path = Path(file_path).expanduser()
+    if not path.is_file():
+        raise FileNotFoundError(f"Excel file not found: {path}")
 
-    filtered = frame[frame["Location Normalized"].isin(["Offshore", "Onsite"])].copy()
-    if filtered.empty:
-        return pd.DataFrame(columns=[group_col, "Resources"])
+    try:
+        df = pd.read_excel(path, sheet_name="Resource List", engine="openpyxl")
+    except ValueError:
+        # fallback to first sheet
+        df = pd.read_excel(path, engine="openpyxl")
 
-    filtered[group_col] = filtered[group_col].fillna("Unknown").astype(str).str.strip()
-    summary = filtered.groupby(group_col, dropna=False).size().reset_index(name="Resources")
-    return summary.sort_values("Resources", ascending=False).reset_index(drop=True)
+    df.columns = [str(column).strip() for column in df.columns]
+    required = ["Resource Name", "Billable"]
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise ValueError(f"The workbook must contain the columns: {', '.join(required)}")
+
+    details = df[required].copy()
+    details["Resource Name"] = details["Resource Name"].fillna("").astype(str).str.strip()
+    details["Billable"] = details["Billable"].fillna("Unknown").astype(str).str.strip()
+    details = details[details["Resource Name"].ne("")].reset_index(drop=True)
+
+    # Count unique resource names per billability value
+    summary = (
+        details.groupby("Billable", dropna=False)["Resource Name"].nunique().reset_index(name="Resources")
+    )
+    summary.rename(columns={"Billable": "Billability"}, inplace=True)
+    summary = summary.sort_values("Resources", ascending=False).reset_index(drop=True)
+
+    # Return both aggregated summary and resource-level details for downloads
+    return summary, details
 
 
 @st.cache_data(show_spinner=False)

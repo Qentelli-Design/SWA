@@ -282,6 +282,7 @@ def render_summary_chart(
     empty_message: str,
     top_n: int = 10,
     value_column: str = "Resources",
+    details=None,
 ) -> None:
     st.subheader(title)
     if summary.empty:
@@ -309,9 +310,14 @@ def render_summary_chart(
         paper_bgcolor="rgba(0,0,0,0)",
     )
     st.plotly_chart(chart, use_container_width=True, config={"displayModeBar": False})
+    if details is not None:
+        download_df = details.copy()
+    else:
+        download_df = visible.copy()
+
     st.download_button(
         "Download chart data",
-        data=visible.to_csv(index=False).encode("utf-8"),
+        data=download_df.to_csv(index=False).encode("utf-8"),
         file_name=f"{title.lower().replace(' ', '_')}.csv",
         mime="text/csv",
         use_container_width=False,
@@ -388,16 +394,23 @@ if selected_section == "Resource pulse":
     }[selected_view]
     render_summary_chart(selected_view, summary, group_column, accent, "No matching resources were found in Detail1.", top_n)
 elif selected_section == "Billability":
-    st.markdown('<div class="hero-copy">Current billability distribution from the Detail1 worksheet.</div>', unsafe_allow_html=True)
-    with st.sidebar:
-        st.divider()
-        st.markdown(
-            f'<div class="source-pill"><strong>Source sheet</strong><br>Detail1<br><br>'
-            f'<strong>Workbook</strong><br>{Path(EXCEL_FILE_PATH).name}</div>',
-            unsafe_allow_html=True,
+    st.markdown('<div class="hero-copy">Current billability distribution from the CCC resources sheet.</div>', unsafe_allow_html=True)
+    # Use CCC resources workbook for billability details
+    try:
+        billability_summary, billability_details = build_billability_summary(CCC_RESOURCES_FILE_PATH)
+    except (FileNotFoundError, ValueError) as error:
+        st.error(str(error))
+    else:
+        render_summary_chart(
+            "Billability",
+            billability_summary,
+            "Billability",
+            "#087f8c",
+            "No billability data was found.",
+            top_n=30,
+            value_column="Resources",
+            details=billability_details,
         )
-    billability = build_billability_summary(EXCEL_FILE_PATH)
-    render_summary_chart("Billability", billability, "Billability", "#087f8c", "No billability data was found in Detail1.")
 elif selected_section == "Team Structure":
     try:
         render_team_structure(CCC_RESOURCES_FILE_PATH)
