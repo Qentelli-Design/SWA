@@ -333,7 +333,8 @@ if st.session_state.dashboard_section is None:
 
 selected_section = st.session_state.dashboard_section
 if selected_section not in ("Team Structure", "ORG Structure", "Project Delivery Status"):
-    st.markdown('<div class="eyebrow">SWA / workforce planning</div>', unsafe_allow_html=True)
+    eyebrow_label = "SWA / Release Info" if selected_section == "Releases" else "SWA / workforce planning"
+    st.markdown(f'<div class="eyebrow">{eyebrow_label}</div>', unsafe_allow_html=True)
     st.title(selected_section)
 
 with st.sidebar:
@@ -378,8 +379,12 @@ elif selected_section == "Project Delivery Status":
     except (FileNotFoundError, ValueError) as error:
         st.error(str(error))
 elif selected_section == "Releases":
-    st.markdown('<div class="hero-copy">Releases — placeholder. Functions will be built later.</div>', unsafe_allow_html=True)
-    st.info("Releases section is a placeholder and will be implemented later.")
+    try:
+        from releases import render_releases
+
+        render_releases(PROJECT_DELIVERY_STATUS_FILE_PATH)
+    except (FileNotFoundError, ValueError) as error:
+        st.error(str(error))
 else:
     if selected_section == "Risks":
         try:

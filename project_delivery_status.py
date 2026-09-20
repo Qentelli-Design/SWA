@@ -120,10 +120,19 @@ def _count_badge(status: str, count: int) -> str:
     return f"<span class='count-badge {status.casefold()}' aria-label='{status} status'>{count}</span>"
 
 
-def _detail_value(label: str, value: str) -> str:
+def _detail_value(label: str, value: object) -> str:
+    # Normalize missing/blank values to a friendly placeholder
+    display = value
+    try:
+        if pd.isna(value) or str(value).strip().lower() in {"", "nan", "nat"}:
+            display = "Not available"
+    except Exception:
+        if value in (None, ""):
+            display = "Not available"
+
     return (
         f"<div class='detail-field'><div class='detail-label'>{label}</div>"
-        f"<div class='detail-value'>{value}</div></div>"
+        f"<div class='detail-value'>{display}</div></div>"
     )
 
 
