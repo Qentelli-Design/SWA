@@ -3,7 +3,7 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent
 APP_TITLE = "SWA Workforce & Project Dashboard"
-EXCEL_FILE_PATH = os.getenv("SWA_EXCEL_FILE_PATH", str(BASE_DIR / "SWA Consolidated sheet.xlsx"))
+EXCEL_FILE_PATH = None
 CCC_RESOURCES_FILE_PATH = os.getenv("CCC_RESOURCES_FILE_PATH", str(BASE_DIR / "CCC_Resources.xlsx"))
 ORG_STRUCTURE_FILE_PATH = os.getenv("ORG_STRUCTURE_FILE_PATH", str(BASE_DIR / "CCC_Resources.xlsx"))
 PROJECT_DELIVERY_STATUS_FILE_PATH = os.getenv(

@@ -7,7 +7,6 @@ from config import (
     APP_TITLE,
     BRAND_IMAGE_PATH,
     CCC_RESOURCES_FILE_PATH,
-    EXCEL_FILE_PATH,
     ORG_STRUCTURE_FILE_PATH,
     PROJECT_DELIVERY_STATUS_FILE_PATH,
     RISK_TRACKER_FILE_PATH,
@@ -16,11 +15,7 @@ from config import (
 from data_loader import (
     build_billability_summary,
     build_risk_summary,
-    build_location_summary,
-    build_total_resources,
-    get_dashboard_summary,
     load_risks,
-    load_detail1,
 )
 from team_structure import render_team_structure
 from org_structure import render_org_structure
@@ -249,25 +244,17 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-try:
-    base_frame = load_detail1(EXCEL_FILE_PATH)
-    summary_metrics = get_dashboard_summary(EXCEL_FILE_PATH)
-except FileNotFoundError:
-    st.error(f"Excel file not found: {EXCEL_FILE_PATH}")
-    st.stop()
-except ValueError as error:
-    st.error(str(error))
-    st.stop()
+# Resource Pulse (Detail1) has been removed — no preloading of Detail1 required
 
 sections = [
-    "Resource pulse",
+    "Project Delivery Status",
+    "Releases",
+    "Risks",
     "Billability",
     "Team Structure",
+    "ORG Structure",
     "Skills",
     "Certifications",
-    "Project Delivery Status",
-    "ORG Structure",
-    "Risks",
 ]
 
 if "dashboard_section" not in st.session_state:
@@ -356,44 +343,8 @@ with st.sidebar:
         st.session_state.dashboard_section = None
         st.rerun()
 
-if selected_section == "Resource pulse":
-    st.markdown('<div class="hero-copy">A clear view of where the workforce is deployed across projects and locations.</div>', unsafe_allow_html=True)
-    group_options = {column: column for column in ("Project", "Portfolio", "Wave") if column in base_frame.columns}
-    if "Status" in base_frame.columns:
-        group_options["OnBoarding Status"] = "Status"
-    group_label = st.sidebar.radio("Group by", list(group_options), index=0, key="resource_group")
-    top_n = st.sidebar.slider("Chart rows", min_value=5, max_value=30, value=10, step=1)
-    with st.sidebar:
-        st.divider()
-        st.markdown(
-            f'<div class="source-pill"><strong>Source sheet</strong><br>Detail1<br><br>'
-            f'<strong>Workbook</strong><br>{Path(EXCEL_FILE_PATH).name}</div>',
-            unsafe_allow_html=True,
-        )
-    group_column = group_options[group_label]
-    total_resources = build_total_resources(EXCEL_FILE_PATH, group_column)
-    onsite_resources = build_location_summary(EXCEL_FILE_PATH, "Onsite", group_column)
-    offshore_resources = build_location_summary(EXCEL_FILE_PATH, "Offshore", group_column)
-    if "resource_view" not in st.session_state:
-        st.session_state.resource_view = "Total Resources"
-    button_col1, button_col2, button_col3 = st.columns(3)
-    for column, label, count in (
-        (button_col1, "Total Resources", summary_metrics["Total Resources"]),
-        (button_col2, "Onsite", summary_metrics["Onsite"]),
-        (button_col3, "Offshore", summary_metrics["Offshore"]),
-    ):
-        with column:
-            if st.button(f"{label}  |  {count}", key=f"{label.lower().replace(' ', '_')}_button", use_container_width=True, type="primary" if st.session_state.resource_view == label else "secondary"):
-                st.session_state.resource_view = label
-                st.rerun()
-    selected_view = st.session_state.resource_view
-    summary, accent = {
-        "Total Resources": (total_resources, "#087f8c"),
-        "Onsite": (onsite_resources, "#2d8a68"),
-        "Offshore": (offshore_resources, "#d96c38"),
-    }[selected_view]
-    render_summary_chart(selected_view, summary, group_column, accent, "No matching resources were found in Detail1.", top_n)
-elif selected_section == "Billability":
+
+if selected_section == "Billability":
     st.markdown('<div class="hero-copy">Current billability distribution from the CCC resources sheet.</div>', unsafe_allow_html=True)
     # Use CCC resources workbook for billability details
     try:
@@ -426,6 +377,9 @@ elif selected_section == "Project Delivery Status":
         render_project_delivery_status(PROJECT_DELIVERY_STATUS_FILE_PATH)
     except (FileNotFoundError, ValueError) as error:
         st.error(str(error))
+elif selected_section == "Releases":
+    st.markdown('<div class="hero-copy">Releases — placeholder. Functions will be built later.</div>', unsafe_allow_html=True)
+    st.info("Releases section is a placeholder and will be implemented later.")
 else:
     if selected_section == "Risks":
         try:
@@ -497,11 +451,4 @@ else:
                     use_container_width=False,
                 )
     else:
-        with st.sidebar:
-            st.divider()
-            st.markdown(
-                f'<div class="source-pill"><strong>Source sheet</strong><br>Detail1<br><br>'
-                f'<strong>Workbook</strong><br>{Path(EXCEL_FILE_PATH).name}</div>',
-                unsafe_allow_html=True,
-            )
-        st.info(f"{selected_section} is ready for its Detail1 data view.")
+        st.info(f"{selected_section} is ready for its data view.")
