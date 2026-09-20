@@ -126,7 +126,8 @@ def render_releases(file_path: str) -> None:
         cols = st.columns([1, 2, 2])
         with cols[0]:
             st.markdown(f"<div class='delivery-card-title'>Release Activities</div>", unsafe_allow_html=True)
-            st.metric(label="", value=str(len(all_releases)))
+            # Show a clear label to avoid Streamlit accessibility warnings
+            st.metric(label="Total releases", value=str(len(all_releases)))
         with cols[1]:
             if st.button("View all releases", key="view_all_releases", use_container_width=True):
                 show_all_releases(all_releases)
@@ -147,7 +148,8 @@ def render_releases(file_path: str) -> None:
                         "<div class='count-badge-row'>" + _count_badge("Green", release_count) + "</div>",
                         unsafe_allow_html=True,
                     )
-                    if st.button("View details", key=f"release_details_{product_name}", width="stretch"):
+                    # Use standard Streamlit button args to avoid unexpected keyword errors
+                    if st.button("View details", key=f"release_details_{product_name}", use_container_width=True):
                         show_release_details(product_name, frame)
 
 

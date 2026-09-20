@@ -2,6 +2,7 @@ from pathlib import Path
 
 import plotly.express as px
 import streamlit as st
+import pandas as pd
 
 from config import (
     APP_TITLE,
@@ -14,12 +15,13 @@ from config import (
 )
 from data_loader import (
     build_billability_summary,
-    build_risk_summary,
-    load_risks,
+    build_risk_summary_from_product_status,
+    load_risks_from_product_status,
 )
 from team_structure import render_team_structure
 from org_structure import render_org_structure
 from project_delivery_status import render_project_delivery_status
+from releases import render_releases
 
 st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide", initial_sidebar_state="expanded")
 
@@ -302,13 +304,6 @@ def render_summary_chart(
     else:
         download_df = visible.copy()
 
-    st.download_button(
-        "Download chart data",
-        data=download_df.to_csv(index=False).encode("utf-8"),
-        file_name=f"{title.lower().replace(' ', '_')}.csv",
-        mime="text/csv",
-        use_container_width=False,
-    )
 
 
 if st.session_state.dashboard_section is None:
@@ -378,29 +373,40 @@ elif selected_section == "Project Delivery Status":
         render_project_delivery_status(PROJECT_DELIVERY_STATUS_FILE_PATH)
     except (FileNotFoundError, ValueError) as error:
         st.error(str(error))
+    st.info(f"{selected_section} is ready for its data view.")
+
 elif selected_section == "Releases":
     try:
-        from releases import render_releases
-
         render_releases(PROJECT_DELIVERY_STATUS_FILE_PATH)
     except (FileNotFoundError, ValueError) as error:
         st.error(str(error))
-else:
-    if selected_section == "Risks":
-        try:
-            risk_summary = build_risk_summary(RISK_TRACKER_FILE_PATH)
-            risk_details = load_risks(RISK_TRACKER_FILE_PATH)
-        except (FileNotFoundError, ValueError) as error:
-            st.error(str(error))
-        else:
-            with st.sidebar:
-                st.divider()
-                st.markdown(
-                    f'<div class="source-pill"><strong>Source sheet</strong><br>Risk Tracker<br><br>'
-                    f'<strong>Workbook</strong><br>{Path(RISK_TRACKER_FILE_PATH).name}</div>',
-                    unsafe_allow_html=True,
-                )
 
+elif selected_section == "Risks":
+    try:
+        risk_summary = build_risk_summary_from_product_status(PROJECT_DELIVERY_STATUS_FILE_PATH)
+        risk_details = load_risks_from_product_status(PROJECT_DELIVERY_STATUS_FILE_PATH)
+    except (FileNotFoundError, ValueError) as error:
+        st.error(str(error))
+    else:
+        with st.sidebar:
+            st.divider()
+            st.markdown(
+                f'<div class="source-pill"><strong>Source sheet</strong><br>Product_Status_Report<br><br>'
+                f'<strong>Workbook</strong><br>{Path(PROJECT_DELIVERY_STATUS_FILE_PATH).name}</div>',
+                unsafe_allow_html=True,
+            )
+        render_summary_chart(
+            "Risks",
+            risk_summary,
+            "Product",
+            "#f3c1c1",
+            "No risks found.",
+            top_n=20,
+            value_column="Risks",
+            details=risk_details,
+        )
+        # Render risks by portfolio component only when that grouping is available.
+        if "Portfolio Component" in risk_summary.columns:
             render_summary_chart(
                 "Risks by Portfolio Component",
                 risk_summary,
@@ -410,7 +416,10 @@ else:
                 top_n=30,
                 value_column="Risks",
             )
+        # If Portfolio Component grouping isn't present, skip silently (no chart)
 
+        # If the product sheets contain a 'Risk Status' column, allow status filtering.
+        if "Risk Status" in risk_details.columns:
             status_counts = risk_details["Risk Status"].fillna("Unknown").astype(str).str.strip().value_counts()
             risk_statuses = ("Open", "Inprogress", "Closed")
             if "risk_status" not in st.session_state or st.session_state.risk_status not in risk_statuses:
@@ -434,26 +443,23 @@ else:
             selected_risks = risk_details[
                 risk_details["Risk Status"].fillna("Unknown").astype(str).str.strip().eq(selected_status)
             ].copy()
-            detail_columns = [
-                "Risk Owner",
-                "Portfolio Component",
-                "Risk Core Description",
-                "Mitigation Plan",
-                "Impact",
-                "Severity",
-            ]
-            detail_columns = [column for column in detail_columns if column in selected_risks.columns]
-            st.subheader(f"{selected_status} risks")
-            if selected_risks.empty:
-                st.info(f"No {selected_status.lower()} risks were found.")
-            else:
-                st.dataframe(selected_risks[detail_columns], hide_index=True, use_container_width=True)
-                st.download_button(
-                    f"Download {selected_status.lower()} risks",
-                    data=selected_risks[detail_columns].to_csv(index=False).encode("utf-8"),
-                    file_name=f"{selected_status.lower()}_risks.csv",
-                    mime="text/csv",
-                    use_container_width=False,
-                )
-    else:
-        st.info(f"{selected_section} is ready for its data view.")
+        else:
+            # No 'Risk Status' column: show all risks and use a neutral status label
+            selected_risks = risk_details.copy()
+            selected_status = "All"
+
+        # Always show product, risks, and mitigation plan when present
+        detail_columns = ["Product", "Risks", "Mitigation Plan"]
+        detail_columns = [column for column in detail_columns if column in selected_risks.columns]
+        st.subheader(f"{selected_status} risks")
+        if selected_risks.empty:
+            st.info(f"No {selected_status.lower()} risks were found.")
+        else:
+            st.dataframe(selected_risks[detail_columns], use_container_width=True)
+            st.download_button(
+                f"Download {selected_status.lower()} risks",
+                data=selected_risks[detail_columns].to_csv(index=False).encode("utf-8"),
+                file_name=f"{selected_status.lower()}_risks.csv",
+                mime="text/csv",
+                use_container_width=False,
+            )

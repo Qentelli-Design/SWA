@@ -65,28 +65,74 @@ def build_billability_summary(file_path: str, group_by: str = "Billability") -> 
 
 
 @st.cache_data(show_spinner=False)
-def load_risks(file_path: str, sheet_name: str = "Risk Tracker") -> pd.DataFrame:
+def load_risks_from_product_status(file_path: str) -> pd.DataFrame:
+    """Extract non-empty Risks and Mitigation Plan entries from each product sheet.
+
+    Reads every sheet in the Product_Status_Report workbook. Looks for a column named 'Risks' (preferred),
+    otherwise uses column L (0-based index 11). For Mitigation Plan uses 'Mitigation Plan' or column M (index 12).
+    Returns a DataFrame with columns: Product, Risks, Mitigation Plan. Rows with empty Risks are excluded.
+    """
     path = Path(file_path).expanduser()
     if not path.is_file():
-        raise FileNotFoundError(f"Excel file not found: {path}")
+        raise FileNotFoundError(f"Product status workbook not found: {path}")
 
-    try:
-        risks = pd.read_excel(path, sheet_name=sheet_name, engine="openpyxl")
-    except ValueError as error:
-        raise ValueError(f"The workbook does not contain a sheet named '{sheet_name}'.") from error
+    workbook = pd.ExcelFile(path, engine="openpyxl")
+    rows = []
+    for sheet_name in workbook.sheet_names:
+        frame = pd.read_excel(path, sheet_name=sheet_name, engine="openpyxl")
+        frame.columns = [str(c).strip() for c in frame.columns]
 
-    risks = risks.dropna(how="all").copy()
-    risks.columns = [str(column).strip() for column in risks.columns]
-    if "Portfolio Component" not in risks.columns:
-        raise ValueError(f"The '{sheet_name}' sheet must contain a 'Portfolio Component' column.")
-    risks["Portfolio Component"] = risks["Portfolio Component"].fillna("Unknown").astype(str).str.strip()
-    return risks.reset_index(drop=True)
+        # determine risks column
+        if "Risks" in frame.columns:
+            risks_col = "Risks"
+        elif len(frame.columns) >= 12:
+            risks_col = frame.columns[11]
+        else:
+            continue
+
+        # determine mitigation column
+        if "Mitigation Plan" in frame.columns:
+            mit_col = "Mitigation Plan"
+        elif len(frame.columns) >= 13:
+            mit_col = frame.columns[12]
+        else:
+            mit_col = None
+
+        sub = frame[[risks_col]].copy()
+        if mit_col:
+            sub[mit_col] = frame[mit_col].copy()
+
+        sub = sub.dropna(how="all").copy()
+        sub[risks_col] = sub[risks_col].fillna("").astype(str).str.strip()
+        if mit_col:
+            sub[mit_col] = sub[mit_col].fillna("").astype(str).str.strip()
+
+        sub = sub[sub[risks_col].ne("")].copy()
+        if sub.empty:
+            continue
+
+        sub["Product"] = sheet_name
+        # normalize column names
+        if mit_col:
+            sub = sub.rename(columns={risks_col: "Risks", mit_col: "Mitigation Plan"})
+        else:
+            sub = sub.rename(columns={risks_col: "Risks"})
+            sub["Mitigation Plan"] = ""
+
+        rows.append(sub[["Product", "Risks", "Mitigation Plan"]])
+
+    if not rows:
+        return pd.DataFrame(columns=["Product", "Risks", "Mitigation Plan"])
+    details = pd.concat(rows, ignore_index=True)
+    return details
 
 
 @st.cache_data(show_spinner=False)
-def build_risk_summary(file_path: str) -> pd.DataFrame:
-    risks = load_risks(file_path)
-    summary = risks.groupby("Portfolio Component", dropna=False).size().reset_index(name="Risks")
+def build_risk_summary_from_product_status(file_path: str) -> pd.DataFrame:
+    details = load_risks_from_product_status(file_path)
+    if details.empty:
+        return pd.DataFrame(columns=["Product", "Risks"]) 
+    summary = details.groupby("Product", dropna=False).size().reset_index(name="Risks")
     return summary.sort_values("Risks", ascending=False).reset_index(drop=True)
 
 
