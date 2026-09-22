@@ -7,6 +7,7 @@ import pandas as pd
 from config import (
     APP_TITLE,
     BRAND_IMAGE_PATH,
+    CCC_RESOURCE_SKILLSET_FILE_PATH,
     CCC_RESOURCES_FILE_PATH,
     ORG_STRUCTURE_FILE_PATH,
     PROJECT_DELIVERY_STATUS_FILE_PATH,
@@ -22,6 +23,7 @@ from team_structure import render_team_structure
 from org_structure import render_org_structure
 from project_delivery_status import render_project_delivery_status
 from releases import render_releases
+from skills import render_skills
 
 st.set_page_config(page_title=APP_TITLE, page_icon="📊", layout="wide", initial_sidebar_state="expanded")
 
@@ -463,3 +465,8 @@ elif selected_section == "Risks":
                 mime="text/csv",
                 use_container_width=False,
             )
+elif selected_section == "Skills":
+    try:
+        render_skills(CCC_RESOURCE_SKILLSET_FILE_PATH)
+    except (FileNotFoundError, ValueError) as error:
+        st.error(str(error))

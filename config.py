@@ -13,3 +13,7 @@ PROJECT_DELIVERY_STATUS_FILE_PATH = os.getenv(
 BRAND_IMAGE_PATH = Path(os.getenv("SWA_BRAND_IMAGE_PATH", str(BASE_DIR / "Qentelli.jpg")))
 SWA_IMAGE_PATH = Path(os.getenv("SWA_IMAGE_PATH", str(BASE_DIR / "swa.jpg")))
 RISK_TRACKER_FILE_PATH = os.getenv("SWA_RISK_TRACKER_FILE_PATH", str(BASE_DIR / "Risk_Tracker.xlsx"))
+CCC_RESOURCE_SKILLSET_FILE_PATH = os.getenv(
+	"CCC_RESOURCE_SKILLSET_FILE_PATH",
+	str(BASE_DIR / "CCC_Resource_Skillset.xlsx"),
+)
