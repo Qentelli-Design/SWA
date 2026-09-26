@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from html import escape
-from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+
+from common.excel import CACHE_TTL, read_resource_list, require_workbook, workbook_token
 
 
 ROOT_NAME = "Siva Rao Kompella S V"
@@ -17,18 +20,16 @@ REQUIRED_COLUMNS = [
 ]
 
 
-@st.cache_data(show_spinner=False)
 def load_data(file_path: str) -> pd.DataFrame:
-    path = Path(file_path).expanduser()
-    if not path.is_file():
-        raise FileNotFoundError(f"Excel file not found: {path}")
+    path = require_workbook(file_path, "Excel file not found: {path}")
+    resolved, mtime_ns, size = workbook_token(path)
+    return _load_org_data(resolved, mtime_ns, size)
 
-    try:
-        frame = pd.read_excel(path, sheet_name="Resource List", engine="openpyxl")
-    except ValueError as error:
-        raise ValueError("The workbook does not contain a 'Resource List' sheet.") from error
 
-    frame.columns = [str(column).strip() for column in frame.columns]
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL, max_entries=8)
+def _load_org_data(file_path: str, mtime_ns: int, size: int) -> pd.DataFrame:
+    del mtime_ns, size
+    frame = read_resource_list(file_path)
     missing_columns = [column for column in REQUIRED_COLUMNS if column not in frame.columns]
     if missing_columns:
         raise ValueError(f"The 'Resource List' sheet is missing: {', '.join(missing_columns)}")
@@ -54,11 +55,6 @@ def clean_data(frame: pd.DataFrame) -> pd.DataFrame:
 
 def _person_key(name: str) -> str:
     return " ".join(sorted(name.casefold().split()))
-
-
-def _display_name(row: pd.Series) -> str:
-    product = row["Product"].strip()
-    return f"{row['Resource Name']} - {product}" if product else row["Resource Name"]
 
 
 def build_reporting_relationships(frame: pd.DataFrame) -> dict[str, list[dict[str, str]]]:
@@ -142,33 +138,6 @@ def get_connected_resources(hierarchy: dict) -> set[str]:
 
     walk(hierarchy)
     return connected
-
-
-def _dot_text(value: str) -> str:
-    return value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ")
-
-
-def _node_label(node: dict) -> str:
-    product = node["product"]
-    title = f"{node['name']} - {product}" if product else node["name"]
-    return _dot_text(title)
-
-
-def _append_dot_nodes(node: dict, lines: list[str], index: list[int], parent_id: str | None = None) -> None:
-    node_id = f"node_{index[0]}"
-    index[0] += 1
-    node["dot_id"] = node_id
-    if node["key"] == _person_key(ROOT_NAME):
-        style = 'fillcolor="#087f8c", fontcolor="white", color="#075f69", penwidth=2.2'
-    elif node["is_manager"]:
-        style = 'fillcolor="#d9eee9", fontcolor="#173c43", color="#72b9b0", penwidth=1.5'
-    else:
-        style = 'fillcolor="#ffffff", fontcolor="#26383d", color="#c7d8d6", penwidth=1.0'
-    lines.append(f'{node_id} [label="{_node_label(node)}", {style}];')
-    if parent_id is not None:
-        lines.append(f"{parent_id} -> {node_id};")
-    for child in node["children"]:
-        _append_dot_nodes(child, lines, index, node_id)
 
 
 def _node_display(node: dict) -> str:

@@ -1,62 +1,89 @@
+"""Release activities extracted from the product status workbook."""
+
+from __future__ import annotations
+
+from html import escape
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
-from project_delivery_status import (
-    _format_date,
-    normalize_progress,
-    _count_badge,
-    _render_styles,
-    normalize_status,
+from common.delivery import (
     STATUS_ORDER,
-    _status_badge,
+    count_badge,
+    detail_value,
+    format_date,
+    normalize_progress,
+    normalize_status,
+    render_delivery_styles,
+    status_badge,
 )
+from common.excel import CACHE_TTL, read_excel_frame, require_workbook, sheet_names, workbook_token
+
+_RELEASE_COLUMNS = ["Product", "Activities", "Environment", "Actual End Date", "Status", "% Completed"]
 
 
 def load_release_sheets(file_path: str) -> dict[str, pd.DataFrame]:
-    path = Path(file_path).expanduser()
-    if not path.is_file():
-        raise FileNotFoundError(f"Product status workbook not found: {path}")
+    path = require_workbook(file_path, "Product status workbook not found: {path}")
+    resolved, mtime_ns, size = workbook_token(path)
+    return _load_release_sheets(resolved, mtime_ns, size)
 
-    workbook = pd.ExcelFile(path, engine="openpyxl")
-    products = {}
-    for sheet_name in workbook.sheet_names:
-        frame = pd.read_excel(path, sheet_name=sheet_name, engine="openpyxl")
-        frame.columns = [str(column).strip() for column in frame.columns]
-        frame = frame.dropna(how="all").copy()
+
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL, max_entries=8)
+def _load_release_sheets(file_path: str, mtime_ns: int, size: int) -> dict[str, pd.DataFrame]:
+    del mtime_ns, size
+    products: dict[str, pd.DataFrame] = {}
+    path = Path(file_path)
+    for sheet_name in sheet_names(file_path):
+        frame = read_excel_frame(path, sheet_name).dropna(how="all").copy()
         if "Activities" not in frame.columns:
             continue
         frame["Activities"] = frame["Activities"].fillna("").astype(str).str.strip()
-        # Ensure Activity Type and Environment columns exist for filtering and details
         if "Activity Type" not in frame.columns:
             frame["Activity Type"] = ""
         if "Environment" not in frame.columns:
             frame["Environment"] = ""
 
-        # Filter only release activities (case-insensitive contains 'release' or equals)
         mask = frame["Activity Type"].astype(str).str.casefold().str.contains("release")
         releases = frame.loc[mask].copy()
-        releases = releases[releases["Activities"].ne("")].reset_index(drop=True)
-        products[sheet_name] = releases
+        products[sheet_name] = releases[releases["Activities"].ne("")].reset_index(drop=True)
     return products
+
+
+def _combine_releases(products: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    frames = []
+    for name, frame in products.items():
+        if frame is None or frame.empty:
+            continue
+        copy = frame.copy()
+        copy["Product"] = name
+        frames.append(copy)
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
+
+
+def _release_download_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    download = frame[[column for column in _RELEASE_COLUMNS if column in frame.columns]].copy()
+    if "% Completed" in download.columns:
+        download["% Completed"] = download["% Completed"].apply(lambda value: f"{normalize_progress(value):.0f}%")
+    return download
 
 
 @st.dialog("Release activity progress", width="large")
 def show_release_details(product_name: str, frame: pd.DataFrame) -> None:
     st.markdown(
-        f"<div class='dialog-product-title'>{product_name} - Release Activities</div>",
+        f"<div class='dialog-product-title'>{escape(product_name)} - Release Activities</div>",
         unsafe_allow_html=True,
     )
     if frame.empty:
         st.info("No release activities found for this product.")
         return
 
-    # Show a count row like the delivery page
     status_counts = frame["Status"].map(normalize_status).value_counts()
     st.markdown(
         "<div class='count-badge-row'>"
-        + "".join(_count_badge(status, int(status_counts.get(status, 0))) for status in STATUS_ORDER)
+        + "".join(count_badge(status, int(status_counts.get(status, 0))) for status in STATUS_ORDER)
         + "</div>",
         unsafe_allow_html=True,
     )
@@ -71,86 +98,21 @@ def show_release_details(product_name: str, frame: pd.DataFrame) -> None:
                 vertical_alignment="center",
             )
             with activity_column:
+                activity = escape(str(row["Activities"]))
                 st.markdown(
-                    f"<div class='activity-name'>{row_index + 1}. {row['Activities']} -- {progress:.0f}%</div>",
+                    f"<div class='activity-name'>{row_index + 1}. {activity} -- {progress:.0f}%</div>",
                     unsafe_allow_html=True,
                 )
                 st.progress(progress / 100)
             with env_column:
-                st.markdown(_detail_value("Environment", row.get("Environment", "")), unsafe_allow_html=True)
+                st.markdown(detail_value("Environment", row.get("Environment", "")), unsafe_allow_html=True)
             with date_column:
-                st.markdown(_detail_value("Planned start", _format_date(row.get("Planned Start Date", ""))), unsafe_allow_html=True)
+                st.markdown(
+                    detail_value("Planned start", format_date(row.get("Planned Start Date", ""))),
+                    unsafe_allow_html=True,
+                )
             with status_column:
-                st.markdown(_detail_value("Status", _status_badge(status)), unsafe_allow_html=True)
-
-
-def _detail_value(label: str, value: object) -> str:
-    # Normalize missing/blank values to a friendly placeholder
-    display = value
-    try:
-        if pd.isna(value) or str(value).strip().lower() in {"", "nan", "nat"}:
-            display = "Not available"
-    except Exception:
-        # Fallback for unexpected types
-        if value in (None, ""):
-            display = "Not available"
-
-    return (
-        f"<div class='detail-field'><div class='detail-label'>{label}</div>"
-        f"<div class='detail-value'>{display}</div></div>"
-    )
-
-
-def render_releases(file_path: str) -> None:
-    _render_styles()
-    products = load_release_sheets(file_path)
-    # Use shared styles from project_delivery_status for a corporate look
-
-    product_names = list(products)
-    if not product_names:
-        st.info("No releases found in the product status workbook.")
-        return
-
-    # Combined dataframe for all releases across products
-    combined_frames = []
-    for name, df in products.items():
-        if df is None or df.empty:
-            continue
-        copy = df.copy()
-        copy["Product"] = name
-        combined_frames.append(copy)
-    all_releases = pd.concat(combined_frames, ignore_index=True) if combined_frames else pd.DataFrame()
-
-    # Top dashboard card: use delivery-card styling for corporate consistency
-    with st.container(key=f"delivery-card-dashboard", border=True):
-        cols = st.columns([1, 2, 2])
-        with cols[0]:
-            st.markdown(f"<div class='delivery-card-title'>Release Activities</div>", unsafe_allow_html=True)
-            # Show a clear label to avoid Streamlit accessibility warnings
-            st.metric(label="Total releases", value=str(len(all_releases)))
-        with cols[1]:
-            if st.button("View all releases", key="view_all_releases", use_container_width=True):
-                show_all_releases(all_releases)
-        with cols[2]:
-            if not all_releases.empty:
-                if st.button("Download releases data", key="download_all_releases", use_container_width=True):
-                    show_download_all(all_releases)
-
-    for start in range(0, len(product_names), 3):
-        columns = st.columns(3, gap="medium")
-        for card_index, (column, product_name) in enumerate(zip(columns, product_names[start : start + 3])):
-            with column:
-                frame = products[product_name]
-                release_count = int(len(frame))
-                with st.container(key=f"release-card-{start + card_index}", border=True):
-                    st.markdown(f"<div class='delivery-card-title'>{product_name}</div>", unsafe_allow_html=True)
-                    st.markdown(
-                        "<div class='count-badge-row'>" + _count_badge("Green", release_count) + "</div>",
-                        unsafe_allow_html=True,
-                    )
-                    # Use standard Streamlit button args to avoid unexpected keyword errors
-                    if st.button("View details", key=f"release_details_{product_name}", use_container_width=True):
-                        show_release_details(product_name, frame)
+                st.markdown(detail_value("Status", status_badge(status), html=True), unsafe_allow_html=True)
 
 
 @st.dialog("All releases list", width="large")
@@ -160,22 +122,19 @@ def show_all_releases(frame: pd.DataFrame) -> None:
         st.info("No release activities found.")
         return
 
-    # Show table with selected columns including Environment and Actual End Date
-    cols = [c for c in ["Product", "Activities", "Environment", "Actual End Date", "Status", "% Completed"] if c in frame.columns]
-    display = frame[cols].copy()
-    # Normalize missing values for display and format % Completed
+    display = _release_download_frame(frame)
     if "Environment" in display.columns:
         display["Environment"] = display["Environment"].fillna("Not available")
     if "Actual End Date" in display.columns:
         display["Actual End Date"] = display["Actual End Date"].fillna("")
-    if "% Completed" in display.columns:
-        display["% Completed"] = display["% Completed"].apply(lambda v: f"{normalize_progress(v):.0f}%")
 
-    # Render dataframe without the index (reset already) for a cleaner view
     st.dataframe(display.reset_index(drop=True))
-
-    csv = display.to_csv(index=False).encode("utf-8")
-    st.download_button("Download releases (CSV)", data=csv, file_name="all_releases.csv", mime="text/csv")
+    st.download_button(
+        "Download releases (CSV)",
+        data=display.to_csv(index=False).encode("utf-8"),
+        file_name="all_releases.csv",
+        mime="text/csv",
+    )
 
 
 @st.dialog("Download all releases")
@@ -185,38 +144,81 @@ def show_download_all(frame: pd.DataFrame) -> None:
         st.info("No release activities available to download.")
         return
 
-    download_df = frame[[col for col in ["Product", "Activities", "Environment", "Actual End Date", "Status", "% Completed"] if col in frame.columns]]
-    download_df = download_df.copy()
-    if "% Completed" in download_df.columns:
-        download_df["% Completed"] = download_df["% Completed"].apply(lambda v: f"{normalize_progress(v):.0f}%")
+    download = _release_download_frame(frame)
+    st.download_button(
+        "Download releases (CSV)",
+        data=download.to_csv(index=False).encode("utf-8"),
+        file_name="all_releases.csv",
+        mime="text/csv",
+    )
 
-    csv = download_df.to_csv(index=False).encode("utf-8")
-    st.download_button("Download releases (CSV)", data=csv, file_name="all_releases.csv", mime="text/csv")
+
+def render_releases(file_path: str) -> None:
+    render_delivery_styles()
+    products = load_release_sheets(file_path)
+    product_names = list(products)
+    if not product_names:
+        st.info("No releases found in the product status workbook.")
+        return
+
+    all_releases = _combine_releases(products)
+    with st.container(key="delivery-card-dashboard", border=True):
+        total_column, view_column, download_column = st.columns([1, 2, 2])
+        with total_column:
+            st.markdown("<div class='delivery-card-title'>Release Activities</div>", unsafe_allow_html=True)
+            st.metric(label="Total releases", value=str(len(all_releases)))
+        with view_column:
+            if st.button("View all releases", key="view_all_releases", width="stretch"):
+                show_all_releases(all_releases)
+        with download_column:
+            if not all_releases.empty and st.button("Download releases data", key="download_all_releases", width="stretch"):
+                show_download_all(all_releases)
+
+    for start in range(0, len(product_names), 3):
+        columns = st.columns(3, gap="medium")
+        for card_index, (column, product_name) in enumerate(zip(columns, product_names[start : start + 3])):
+            with column:
+                frame = products[product_name]
+                with st.container(key=f"release-card-{start + card_index}", border=True):
+                    st.markdown(
+                        f"<div class='delivery-card-title'>{escape(product_name)}</div>",
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        "<div class='count-badge-row'>" + count_badge("Green", len(frame)) + "</div>",
+                        unsafe_allow_html=True,
+                    )
+                    if st.button("View details", key=f"release_details_{product_name}", width="stretch"):
+                        show_release_details(product_name, frame)
 
 
 def preview_release_counts(file_path: str) -> dict[str, int]:
-    """Return a mapping of product sheet name -> release activity count and print a summary.
+    """Return product sheet name to release activity count, and print a summary.
 
-    This is a lightweight preview helper intended for local checks and tests.
+    Lightweight helper for local checks. Not used by the Streamlit app.
     """
     products = load_release_sheets(file_path)
-    counts: dict[str, int] = {name: int(len(frame)) for name, frame in products.items()}
+    counts = {name: int(len(frame)) for name, frame in products.items()}
     if not counts:
         print("No releases found in the provided Product Status workbook.")
         return counts
 
-    total = sum(counts.values())
-    print(f"Found releases in {len(counts)} product sheets, total release activities: {total}")
-    for name, cnt in sorted(counts.items(), key=lambda x: x[0].casefold()):
-        print(f"- {name}: {cnt}")
+    print(f"Found releases in {len(counts)} product sheets, total release activities: {sum(counts.values())}")
+    for name, count in sorted(counts.items(), key=lambda item: item[0].casefold()):
+        print(f"- {name}: {count}")
     return counts
 
 
 if __name__ == "__main__":
     import argparse
+
     from config import PROJECT_DELIVERY_STATUS_FILE_PATH
 
     parser = argparse.ArgumentParser(description="Preview release counts from Product_Status_Report workbook")
-    parser.add_argument("file", nargs="?", default=PROJECT_DELIVERY_STATUS_FILE_PATH, help="Path to Product_Status_Report workbook")
-    args = parser.parse_args()
-    preview_release_counts(args.file)
+    parser.add_argument(
+        "file",
+        nargs="?",
+        default=PROJECT_DELIVERY_STATUS_FILE_PATH,
+        help="Path to Product_Status_Report workbook",
+    )
+    preview_release_counts(parser.parse_args().file)

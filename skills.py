@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from io import BytesIO
 from pathlib import Path
 import re
-from typing import Optional
 
 import pandas as pd
 import streamlit as st
 
+from common.excel import CACHE_TTL, dataframe_to_excel_bytes, read_excel_frame, require_workbook, workbook_token
 from config import CCC_RESOURCE_SKILLSET_FILE_PATH
 from skills_config import SKILL_CATEGORIES, UNCATEGORIZED_LABEL
 
@@ -80,23 +79,24 @@ def _detect_skill_columns(frame: pd.DataFrame, exclude: set[str]) -> list[str]:
     return candidates or [c for c in frame.columns if c not in exclude]
 
 
-@st.cache_data(show_spinner="Loading resource skills...")
-def load_resource_skills(file_path: Optional[str] = None) -> pd.DataFrame:
+def load_resource_skills(file_path: str | None = None) -> pd.DataFrame:
     """Load the resources sheet and reshape it to one row per (resource, skill).
 
     Returns columns: Resource Name, Product Name, Skill. A resource with the same
     skill in multiple cells (or duplicate cells) appears only once for that skill.
     """
-    path = Path(file_path or CCC_RESOURCE_SKILLSET_FILE_PATH).expanduser()
-    if not path.is_file():
-        raise FileNotFoundError(f"Resources workbook not found: {path}")
+    path = require_workbook(file_path or CCC_RESOURCE_SKILLSET_FILE_PATH, "Resources workbook not found: {path}")
+    resolved, mtime_ns, size = workbook_token(path)
+    return _load_resource_skills(resolved, mtime_ns, size)
 
+
+@st.cache_data(show_spinner="Loading resource skills...", ttl=CACHE_TTL, max_entries=8)
+def _load_resource_skills(file_path: str, mtime_ns: int, size: int) -> pd.DataFrame:
+    del mtime_ns, size
     try:
-        raw = pd.read_excel(path, sheet_name="Resource List", engine="openpyxl")
+        raw = read_excel_frame(Path(file_path), "Resource List")
     except ValueError:
-        raw = pd.read_excel(path, engine="openpyxl")
-
-    raw.columns = [str(c).strip() for c in raw.columns]
+        raw = read_excel_frame(Path(file_path), 0)
 
     resource_col = next((c for c in raw.columns if c.lower() in _RESOURCE_COL_ALIASES), None)
     product_col = next((c for c in raw.columns if c.lower() in _PRODUCT_COL_ALIASES), None)
@@ -124,20 +124,29 @@ def load_resource_skills(file_path: Optional[str] = None) -> pd.DataFrame:
     return long_df[["Resource Name", "Product Name", "Skill"]].reset_index(drop=True)
 
 
-@st.cache_data(show_spinner=False)
-def load_skill_categories(file_path: Optional[str] = None) -> dict[str, list[str]]:
+def load_skill_categories(file_path: str | None = None) -> dict[str, list[str]]:
     """Load the Category -> Skills mapping from the workbook's 'Skill Categories' sheet.
 
     Falls back to the hardcoded SKILL_CATEGORIES config if the sheet is missing or unusable,
     so the app keeps working even against older workbooks.
     """
-    path = Path(file_path or CCC_RESOURCE_SKILLSET_FILE_PATH).expanduser()
+    path_text = file_path or CCC_RESOURCE_SKILLSET_FILE_PATH
     try:
-        cat_df = pd.read_excel(path, sheet_name="Skill Categories", engine="openpyxl")
+        path = require_workbook(path_text, "Resources workbook not found: {path}")
+        resolved, mtime_ns, size = workbook_token(path)
+    except (FileNotFoundError, OSError):
+        return SKILL_CATEGORIES
+    return _load_skill_categories(resolved, mtime_ns, size)
+
+
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL, max_entries=8)
+def _load_skill_categories(file_path: str, mtime_ns: int, size: int) -> dict[str, list[str]]:
+    del mtime_ns, size
+    try:
+        cat_df = read_excel_frame(Path(file_path), "Skill Categories")
     except (FileNotFoundError, ValueError, OSError):
         return SKILL_CATEGORIES
 
-    cat_df.columns = [str(c).strip() for c in cat_df.columns]
     if "Category" not in cat_df.columns or "Skill" not in cat_df.columns:
         return SKILL_CATEGORIES
 
@@ -150,8 +159,8 @@ def load_skill_categories(file_path: Optional[str] = None) -> dict[str, list[str
     return {category: group["Skill"].tolist() for category, group in cat_df.groupby("Category")}
 
 
-@st.cache_data(show_spinner=False)
-def _skill_to_category_map(file_path: Optional[str] = None) -> dict[str, str]:
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL, max_entries=8)
+def _skill_to_category_map(file_path: str | None = None) -> dict[str, str]:
     """Invert the category config into skill_token -> category (first match wins)."""
     mapping: dict[str, str] = {}
     for category, skills in load_skill_categories(file_path).items():
@@ -160,14 +169,14 @@ def _skill_to_category_map(file_path: Optional[str] = None) -> dict[str, str]:
     return mapping
 
 
-def _with_category(long_df: pd.DataFrame, file_path: Optional[str] = None) -> pd.DataFrame:
+def _with_category(long_df: pd.DataFrame, file_path: str | None = None) -> pd.DataFrame:
     mapping = _skill_to_category_map(file_path)
     out = long_df.copy()
     out["Category"] = out["Skill"].map(mapping).fillna(UNCATEGORIZED_LABEL)
     return out
 
 
-def get_category_counts(long_df: pd.DataFrame, file_path: Optional[str] = None) -> pd.DataFrame:
+def get_category_counts(long_df: pd.DataFrame, file_path: str | None = None) -> pd.DataFrame:
     """Unique-resource counts per category (a resource counts once even with multiple matching skills)."""
     categorized = _with_category(long_df, file_path)
     return (
@@ -179,7 +188,7 @@ def get_category_counts(long_df: pd.DataFrame, file_path: Optional[str] = None) 
     )
 
 
-def get_skill_counts(long_df: pd.DataFrame, category: str, file_path: Optional[str] = None) -> pd.DataFrame:
+def get_skill_counts(long_df: pd.DataFrame, category: str, file_path: str | None = None) -> pd.DataFrame:
     """Unique-resource counts per skill within a category."""
     categorized = _with_category(long_df, file_path)
     subset = categorized[categorized["Category"] == category]
@@ -208,10 +217,7 @@ def create_download_dataframe(resources: pd.DataFrame) -> pd.DataFrame:
 
 
 def _to_excel_bytes(df: pd.DataFrame) -> bytes:
-    buffer = BytesIO()
-    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-        df.to_excel(writer, index=False, sheet_name="Resources")
-    return buffer.getvalue()
+    return dataframe_to_excel_bytes(df, sheet_name="Resources")
 
 
 def _select_category(category: str) -> None:
@@ -232,7 +238,7 @@ def _back_to_skills() -> None:
     st.session_state.skills_skill = None
 
 
-def _render_categories(long_df: pd.DataFrame, file_path: Optional[str]) -> None:
+def _render_categories(long_df: pd.DataFrame, file_path: str | None) -> None:
     st.markdown("### Skill categories")
     counts = get_category_counts(long_df, file_path)
     columns = st.columns(3)
@@ -247,7 +253,7 @@ def _render_categories(long_df: pd.DataFrame, file_path: Optional[str]) -> None:
             )
 
 
-def _render_skills_in_category(long_df: pd.DataFrame, category: str, file_path: Optional[str]) -> None:
+def _render_skills_in_category(long_df: pd.DataFrame, category: str, file_path: str | None) -> None:
     st.button(
         "\u2190 Back to categories",
         key="back_to_categories",
@@ -299,7 +305,7 @@ def _render_resources_for_skill(long_df: pd.DataFrame, category: str, skill: str
     )
 
 
-def render_skills(file_path: Optional[str] = None) -> None:
+def render_skills(file_path: str | None = None) -> None:
     """Render the dynamic Skills → Category → Skill → Resources drill-down."""
     st.session_state.setdefault("skills_category", None)
     st.session_state.setdefault("skills_skill", None)

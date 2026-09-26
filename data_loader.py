@@ -1,139 +1,115 @@
+"""Load billability and product-status risk data."""
+
+from __future__ import annotations
+
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
+from common.excel import CACHE_TTL, read_excel_frame, require_workbook, sheet_names, workbook_token
 
-def _normalize_location(value: object) -> str:
-    if pd.isna(value):
-        return "Unknown"
-    text = str(value).strip().lower()
-    if not text:
-        return "Unknown"
-    if "offshore" in text:
-        return "Offshore"
-    if "onsite" in text or "on site" in text or "office" in text:
-        return "Onsite"
-    if "remote" in text:
-        return "Remote"
-    return "Other"
+_RISK_COLUMNS = ["Product", "Risks", "Mitigation Plan"]
 
 
-def _guess_group_column(frame: pd.DataFrame) -> str:
-    for candidate in ("Project", "Portfolio", "Wave"):
-        if candidate in frame.columns:
-            return candidate
-    return frame.columns[0] if len(frame.columns) else "Project"
-
-
-
-
-
-@st.cache_data(show_spinner=False)
 def build_billability_summary(file_path: str, group_by: str = "Billability") -> tuple[pd.DataFrame, pd.DataFrame]:
-    # Billability is sourced from the CCC resources workbook 'Resource List' sheet
-    path = Path(file_path).expanduser()
-    if not path.is_file():
-        raise FileNotFoundError(f"Excel file not found: {path}")
+    """Return billability counts and resource-level details from the CCC resources workbook.
 
+    ``group_by`` is kept for caller compatibility. Counts always use the ``Billable`` column.
+    """
+    del group_by
+    path = require_workbook(file_path, "Excel file not found: {path}")
+    resolved, mtime_ns, size = workbook_token(path)
+    return _billability_summary(resolved, mtime_ns, size)
+
+
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL, max_entries=8)
+def _billability_summary(file_path: str, mtime_ns: int, size: int) -> tuple[pd.DataFrame, pd.DataFrame]:
+    del mtime_ns, size
+    path = Path(file_path)
     try:
-        df = pd.read_excel(path, sheet_name="Resource List", engine="openpyxl")
+        frame = read_excel_frame(path, "Resource List")
     except ValueError:
-        # fallback to first sheet
-        df = pd.read_excel(path, engine="openpyxl")
+        frame = read_excel_frame(path, 0)
 
-    df.columns = [str(column).strip() for column in df.columns]
     required = ["Resource Name", "Billable"]
-    missing = [c for c in required if c not in df.columns]
+    missing = [column for column in required if column not in frame.columns]
     if missing:
         raise ValueError(f"The workbook must contain the columns: {', '.join(required)}")
 
-    details = df[required].copy()
+    details = frame[required].copy()
     details["Resource Name"] = details["Resource Name"].fillna("").astype(str).str.strip()
     details["Billable"] = details["Billable"].fillna("Unknown").astype(str).str.strip()
     details = details[details["Resource Name"].ne("")].reset_index(drop=True)
 
-    # Count unique resource names per billability value
-    summary = (
-        details.groupby("Billable", dropna=False)["Resource Name"].nunique().reset_index(name="Resources")
-    )
-    summary.rename(columns={"Billable": "Billability"}, inplace=True)
+    summary = details.groupby("Billable", dropna=False)["Resource Name"].nunique().reset_index(name="Resources")
+    summary = summary.rename(columns={"Billable": "Billability"})
     summary = summary.sort_values("Resources", ascending=False).reset_index(drop=True)
-
-    # Return both aggregated summary and resource-level details for downloads
     return summary, details
 
 
-@st.cache_data(show_spinner=False)
 def load_risks_from_product_status(file_path: str) -> pd.DataFrame:
     """Extract non-empty Risks and Mitigation Plan entries from each product sheet.
 
-    Reads every sheet in the Product_Status_Report workbook. Looks for a column named 'Risks' (preferred),
-    otherwise uses column L (0-based index 11). For Mitigation Plan uses 'Mitigation Plan' or column M (index 12).
-    Returns a DataFrame with columns: Product, Risks, Mitigation Plan. Rows with empty Risks are excluded.
+    Reads every sheet in the product status workbook. Looks for a column named ``Risks``
+    (preferred), otherwise uses column L (0-based index 11). Mitigation Plan uses that
+    header or column M (index 12). Rows with empty Risks are excluded.
     """
-    path = Path(file_path).expanduser()
-    if not path.is_file():
-        raise FileNotFoundError(f"Product status workbook not found: {path}")
+    path = require_workbook(file_path, "Product status workbook not found: {path}")
+    resolved, mtime_ns, size = workbook_token(path)
+    return _load_risks(resolved, mtime_ns, size)
 
-    workbook = pd.ExcelFile(path, engine="openpyxl")
-    rows = []
-    for sheet_name in workbook.sheet_names:
-        frame = pd.read_excel(path, sheet_name=sheet_name, engine="openpyxl")
-        frame.columns = [str(c).strip() for c in frame.columns]
 
-        # determine risks column
-        if "Risks" in frame.columns:
-            risks_col = "Risks"
-        elif len(frame.columns) >= 12:
-            risks_col = frame.columns[11]
-        else:
-            continue
-
-        # determine mitigation column
-        if "Mitigation Plan" in frame.columns:
-            mit_col = "Mitigation Plan"
-        elif len(frame.columns) >= 13:
-            mit_col = frame.columns[12]
-        else:
-            mit_col = None
-
-        sub = frame[[risks_col]].copy()
-        if mit_col:
-            sub[mit_col] = frame[mit_col].copy()
-
-        sub = sub.dropna(how="all").copy()
-        sub[risks_col] = sub[risks_col].fillna("").astype(str).str.strip()
-        if mit_col:
-            sub[mit_col] = sub[mit_col].fillna("").astype(str).str.strip()
-
-        sub = sub[sub[risks_col].ne("")].copy()
-        if sub.empty:
-            continue
-
-        sub["Product"] = sheet_name
-        # normalize column names
-        if mit_col:
-            sub = sub.rename(columns={risks_col: "Risks", mit_col: "Mitigation Plan"})
-        else:
-            sub = sub.rename(columns={risks_col: "Risks"})
-            sub["Mitigation Plan"] = ""
-
-        rows.append(sub[["Product", "Risks", "Mitigation Plan"]])
-
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL, max_entries=8)
+def _load_risks(file_path: str, mtime_ns: int, size: int) -> pd.DataFrame:
+    del mtime_ns, size
+    rows: list[pd.DataFrame] = []
+    for sheet_name in sheet_names(file_path):
+        extracted = _risks_from_sheet(file_path, sheet_name)
+        if extracted is not None:
+            rows.append(extracted)
     if not rows:
-        return pd.DataFrame(columns=["Product", "Risks", "Mitigation Plan"])
-    details = pd.concat(rows, ignore_index=True)
-    return details
+        return pd.DataFrame(columns=_RISK_COLUMNS)
+    return pd.concat(rows, ignore_index=True)
 
 
-@st.cache_data(show_spinner=False)
+def _column_by_name_or_index(frame: pd.DataFrame, name: str, index: int) -> str | None:
+    if name in frame.columns:
+        return name
+    if len(frame.columns) > index:
+        return str(frame.columns[index])
+    return None
+
+
+def _risks_from_sheet(file_path: str, sheet_name: str) -> pd.DataFrame | None:
+    frame = read_excel_frame(Path(file_path), sheet_name)
+    risks_col = _column_by_name_or_index(frame, "Risks", 11)
+    if risks_col is None:
+        return None
+
+    mitigation_col = _column_by_name_or_index(frame, "Mitigation Plan", 12)
+    columns = [risks_col, mitigation_col] if mitigation_col else [risks_col]
+    subset = frame[columns].dropna(how="all").copy()
+    subset[risks_col] = subset[risks_col].fillna("").astype(str).str.strip()
+    if mitigation_col:
+        subset[mitigation_col] = subset[mitigation_col].fillna("").astype(str).str.strip()
+
+    subset = subset[subset[risks_col].ne("")].copy()
+    if subset.empty:
+        return None
+
+    subset["Product"] = sheet_name
+    if mitigation_col:
+        subset = subset.rename(columns={risks_col: "Risks", mitigation_col: "Mitigation Plan"})
+    else:
+        subset = subset.rename(columns={risks_col: "Risks"})
+        subset["Mitigation Plan"] = ""
+    return subset[_RISK_COLUMNS]
+
+
 def build_risk_summary_from_product_status(file_path: str) -> pd.DataFrame:
     details = load_risks_from_product_status(file_path)
     if details.empty:
-        return pd.DataFrame(columns=["Product", "Risks"]) 
+        return pd.DataFrame(columns=["Product", "Risks"])
     summary = details.groupby("Product", dropna=False).size().reset_index(name="Risks")
     return summary.sort_values("Risks", ascending=False).reset_index(drop=True)
-
-
-

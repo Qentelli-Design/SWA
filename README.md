@@ -46,7 +46,7 @@ python -m streamlit run app.py
 ## Deploy with GitHub and Streamlit Community Cloud
 
 1. Create a new GitHub repository. Keep it private if the workbooks contain company or personal information.
-2. Copy the application files into the repository root: `app.py`, `config.py`, `data_loader.py`, `team_structure.py`, `requirements.txt`, and `README.md`.
+2. Copy the application files into the repository root: `app.py`, `config.py`, `data_loader.py`, `navigation.py`, `sections.py`, `team_structure.py`, `org_structure.py`, `project_delivery_status.py`, `releases.py`, `skills.py`, `skills_config.py`, the `common` package, `requirements.txt`, and `README.md`.
 3. Copy the workbook files required by the sections you want to publish into the same repository folder. The Team structure page requires `CCC_Resources.xlsx`.
 4. Do not upload `.venv`, `__pycache__`, passwords, API keys, or unrelated personal files. Add a `.gitignore` before committing.
 5. Commit and push the repository to GitHub.

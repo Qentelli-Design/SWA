@@ -1,7 +1,11 @@
-from pathlib import Path
+from __future__ import annotations
+
+from html import escape
 
 import pandas as pd
 import streamlit as st
+
+from common.excel import CACHE_TTL, read_resource_list, require_workbook, workbook_token
 
 
 REQUIRED_COLUMNS = ["Portfolio", "Product", "Resource Name", "Location", "Role", "Vendor"]
@@ -13,18 +17,16 @@ LEADERSHIP_DISPLAY_ORDER = [
 ]
 
 
-@st.cache_data(show_spinner=False)
 def load_data(file_path: str) -> pd.DataFrame:
-    path = Path(file_path).expanduser()
-    if not path.is_file():
-        raise FileNotFoundError(f"Excel file not found: {path}")
+    path = require_workbook(file_path, "Excel file not found: {path}")
+    resolved, mtime_ns, size = workbook_token(path)
+    return _load_team_data(resolved, mtime_ns, size)
 
-    try:
-        frame = pd.read_excel(path, sheet_name="Resource List", engine="openpyxl")
-    except ValueError as error:
-        raise ValueError("The workbook does not contain a 'Resource List' sheet.") from error
 
-    frame.columns = [str(column).strip() for column in frame.columns]
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL, max_entries=8)
+def _load_team_data(file_path: str, mtime_ns: int, size: int) -> pd.DataFrame:
+    del mtime_ns, size
+    frame = read_resource_list(file_path)
     missing_columns = [column for column in REQUIRED_COLUMNS if column not in frame.columns]
     if missing_columns:
         raise ValueError(f"The 'Resource List' sheet is missing: {', '.join(missing_columns)}")
@@ -92,7 +94,7 @@ def render_team_member_card(resource: pd.Series) -> None:
     st.markdown(
         f"""
         <div class="team-card {card_class}">
-            <div class="team-card-name">{display_name}</div>
+            <div class="team-card-name">{escape(display_name)}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -105,8 +107,8 @@ def render_lead_card(resource: pd.Series) -> None:
     st.markdown(
         f"""
         <div class="lead-card {_card_class(resource['Role'])}">
-            <div class="lead-name">{display_name}</div>
-            <div class="lead-role">{resource['Role']}</div>
+            <div class="lead-name">{escape(display_name)}</div>
+            <div class="lead-role">{escape(resource['Role'])}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -141,7 +143,7 @@ def render_governance_section(governance: pd.DataFrame) -> None:
         leadership_rows.append(
             arrow +
             f"<div class='governance-person {person_class} {level_class}'>"
-            f"<span class='governance-name'>{name}</span>"
+            f"<span class='governance-name'>{escape(name)}</span>"
             "</div>"
         )
     st.markdown(
@@ -190,6 +192,10 @@ def render_onsite_team(product_frame: pd.DataFrame) -> None:
 
 def render_offshore_team(product_frame: pd.DataFrame) -> None:
     _render_team_column(product_frame[product_frame["Location Normalized"].eq("Offshore")], "Offshore")
+
+
+def _select_team_product(product: str) -> None:
+    st.session_state.selected_team_product = product
 
 
 def _apply_filters(frame: pd.DataFrame) -> pd.DataFrame:
@@ -341,19 +347,19 @@ def render_team_structure(file_path: str) -> None:
         with st.container(key="ccc-portfolio-rail", border=True):
             st.markdown("<div class='product-rail-title'>CCC portfolio</div>", unsafe_allow_html=True)
             for product in ccc_products:
-                if st.button(
+                st.button(
                     product,
                     key=f"ccc_product_button_{product}",
                     type="primary" if selected_product == product else "secondary",
                     width="stretch",
-                ):
-                    st.session_state.selected_team_product = product
-                    st.rerun()
+                    on_click=_select_team_product,
+                    args=(product,),
+                )
     with center:
         st.markdown(
             f"""
             <div class="selected-product-panel">
-                <div class="selected-product-name">{selected_product}</div>
+                <div class="selected-product-name">{escape(selected_product)}</div>
                 <div class="selected-product-stats">
                     <div class="selected-product-stat"><strong>{onsite_count}</strong>Onsite resources</div>
                     <div class="selected-product-stat"><strong>{offshore_count}</strong>Offshore resources</div>
@@ -375,11 +381,11 @@ def render_team_structure(file_path: str) -> None:
         with st.container(key="other-portfolio-rail", border=True):
             st.markdown("<div class='product-rail-title'>Other portfolios</div>", unsafe_allow_html=True)
             for product in other_products:
-                if st.button(
+                st.button(
                     product,
                     key=f"other_product_button_{product}",
                     type="primary" if selected_product == product else "secondary",
                     width="stretch",
-                ):
-                    st.session_state.selected_team_product = product
-                    st.rerun()
+                    on_click=_select_team_product,
+                    args=(product,),
+                )
