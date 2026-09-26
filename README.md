@@ -31,6 +31,7 @@ python -m streamlit run app.py
 The default paths are repository-relative. Place these files in the project folder when you need the corresponding dashboard sections:
 
 - `CCC_Resources.xlsx` for `Team structure` and its `Resource List` sheet
+- `CCC_Resource_Skillset.xlsx` for `Skills`, including `Resource List` and `Skill Categories` sheets
 - `Product_Status_Report.xlsx` for `Project Delivery Status`, with one product per sheet
 - `SWA Consolidated sheet.xlsx` for the existing `Resource pulse` and `Billability` sections, including `Detail1`
 - `Risk_Tracker.xlsx` for the `Risks` section, including `Risk Tracker`
@@ -46,7 +47,7 @@ python -m streamlit run app.py
 ## Deploy with GitHub and Streamlit Community Cloud
 
 1. Create a new GitHub repository. Keep it private if the workbooks contain company or personal information.
-2. Copy the application files into the repository root: `app.py`, `config.py`, `data_loader.py`, `navigation.py`, `sections.py`, `team_structure.py`, `org_structure.py`, `project_delivery_status.py`, `releases.py`, `skills.py`, `skills_config.py`, the `common` package, `requirements.txt`, and `README.md`.
+2. Copy the application files into the repository root: `app.py`, `config.py`, `data_loader.py`, `navigation.py`, `sections.py`, `team_structure.py`, `org_structure.py`, `project_delivery_status.py`, `releases.py`, `skills.py`, the `common` package, `requirements.txt`, and `README.md`.
 3. Copy the workbook files required by the sections you want to publish into the same repository folder. The Team structure page requires `CCC_Resources.xlsx`.
 4. Do not upload `.venv`, `__pycache__`, passwords, API keys, or unrelated personal files. Add a `.gitignore` before committing.
 5. Commit and push the repository to GitHub.

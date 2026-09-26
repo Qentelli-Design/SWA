@@ -8,7 +8,8 @@ import streamlit as st
 
 from common.excel import CACHE_TTL, dataframe_to_excel_bytes, read_excel_frame, require_workbook, workbook_token
 from config import CCC_RESOURCE_SKILLSET_FILE_PATH
-from skills_config import SKILL_CATEGORIES, UNCATEGORIZED_LABEL
+
+UNCATEGORIZED_LABEL = "Uncategorized / Review"
 
 _RESOURCE_COL_ALIASES = {"resource name"}
 _PRODUCT_COL_ALIASES = {"product name", "product"}
@@ -125,17 +126,10 @@ def _load_resource_skills(file_path: str, mtime_ns: int, size: int) -> pd.DataFr
 
 
 def load_skill_categories(file_path: str | None = None) -> dict[str, list[str]]:
-    """Load the Category -> Skills mapping from the workbook's 'Skill Categories' sheet.
-
-    Falls back to the hardcoded SKILL_CATEGORIES config if the sheet is missing or unusable,
-    so the app keeps working even against older workbooks.
-    """
+    """Load the Category -> Skills mapping from the workbook's 'Skill Categories' sheet."""
     path_text = file_path or CCC_RESOURCE_SKILLSET_FILE_PATH
-    try:
-        path = require_workbook(path_text, "Resources workbook not found: {path}")
-        resolved, mtime_ns, size = workbook_token(path)
-    except (FileNotFoundError, OSError):
-        return SKILL_CATEGORIES
+    path = require_workbook(path_text, "Resources workbook not found: {path}")
+    resolved, mtime_ns, size = workbook_token(path)
     return _load_skill_categories(resolved, mtime_ns, size)
 
 
@@ -144,17 +138,17 @@ def _load_skill_categories(file_path: str, mtime_ns: int, size: int) -> dict[str
     del mtime_ns, size
     try:
         cat_df = read_excel_frame(Path(file_path), "Skill Categories")
-    except (FileNotFoundError, ValueError, OSError):
-        return SKILL_CATEGORIES
+    except ValueError as error:
+        raise ValueError("The workbook must contain a 'Skill Categories' sheet.") from error
 
     if "Category" not in cat_df.columns or "Skill" not in cat_df.columns:
-        return SKILL_CATEGORIES
+        raise ValueError("The 'Skill Categories' sheet must contain 'Category' and 'Skill' columns.")
 
-    cat_df["Category"] = cat_df["Category"].astype(str).str.strip()
-    cat_df["Skill"] = cat_df["Skill"].astype(str).str.strip()
+    cat_df["Category"] = cat_df["Category"].fillna("").astype(str).str.strip()
+    cat_df["Skill"] = cat_df["Skill"].fillna("").astype(str).str.strip()
     cat_df = cat_df[cat_df["Category"].ne("") & cat_df["Skill"].ne("")]
     if cat_df.empty:
-        return SKILL_CATEGORIES
+        raise ValueError("The 'Skill Categories' sheet contains no usable category/skill rows.")
 
     return {category: group["Skill"].tolist() for category, group in cat_df.groupby("Category")}
 
@@ -312,6 +306,7 @@ def render_skills(file_path: str | None = None) -> None:
 
     try:
         long_df = load_resource_skills(file_path)
+        load_skill_categories(file_path)
     except (FileNotFoundError, ValueError) as error:
         st.error(str(error))
         return
