@@ -15,6 +15,7 @@ SECTIONS: tuple[str, ...] = (
     "ORG Structure",
     "Skills",
     "Certifications",
+    "Quick Links",
 )
 
 _HEADERLESS_SECTIONS = frozenset({"Team Structure", "ORG Structure", "Project Delivery Status"})
@@ -47,8 +48,9 @@ def render_landing() -> None:
             st.image(str(SWA_IMAGE_PATH), width=100)
 
     with st.container(key="navigation-grid"):
-        navigation_rows = [st.columns(4), st.columns(4)]
-        for row, row_sections in zip(navigation_rows, (SECTIONS[:4], SECTIONS[4:])):
+        for start in range(0, len(SECTIONS), 4):
+            row = st.columns(4)
+            row_sections = SECTIONS[start : start + 4]
             for column, section in zip(row, row_sections):
                 with column:
                     st.button(

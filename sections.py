@@ -19,6 +19,7 @@ from config import (
 from data_loader import build_billability_summary, build_risk_summary_from_product_status, load_risks_from_product_status
 from org_structure import render_org_structure
 from project_delivery_status import render_project_delivery_status
+from quick_links import render_quick_links
 from releases import render_releases
 from skills import render_skills
 from team_structure import render_team_structure
@@ -76,6 +77,10 @@ def _render_org() -> None:
 
 def _render_skills() -> None:
     _run(lambda: render_skills(CCC_RESOURCE_SKILLSET_FILE_PATH))
+
+
+def _render_quick_links() -> None:
+    _run(lambda: render_quick_links(CCC_RESOURCES_FILE_PATH))
 
 
 def _select_risk_status(status: str) -> None:
@@ -175,6 +180,7 @@ _HANDLERS: dict[str, Callable[[], None]] = {
     "Releases": _render_releases,
     "Risks": _render_risks,
     "Skills": _render_skills,
+    "Quick Links": _render_quick_links,
 }
 
 
