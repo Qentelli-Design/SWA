@@ -44,7 +44,8 @@ def _load_release_sheets(file_path: str, mtime_ns: int, size: int) -> dict[str, 
         if "Environment" not in frame.columns:
             frame["Environment"] = ""
 
-        mask = frame["Activity Type"].astype(str).str.casefold().str.contains("release")
+        activity_types = frame["Activity Type"].astype(str).str.casefold()
+        mask = activity_types.str.contains("release|certification", na=False)
         releases = frame.loc[mask].copy()
         products[sheet_name] = releases[releases["Activities"].ne("")].reset_index(drop=True)
     return products
