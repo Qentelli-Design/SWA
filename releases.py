@@ -165,7 +165,7 @@ def render_releases(file_path: str) -> None:
     with st.container(key="delivery-card-dashboard", border=True):
         total_column, view_column, download_column = st.columns([1, 2, 2])
         with total_column:
-            st.markdown("<div class='delivery-card-title'>Release Activities</div>", unsafe_allow_html=True)
+            st.markdown("<div class='delivery-card-title'>Releases/Milestones</div>", unsafe_allow_html=True)
             st.metric(label="Total releases", value=str(len(all_releases)))
         with view_column:
             if st.button("View all releases", key="view_all_releases", width="stretch"):

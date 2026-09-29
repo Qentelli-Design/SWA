@@ -8,7 +8,7 @@ from config import BRAND_IMAGE_PATH, SWA_IMAGE_PATH
 
 SECTIONS: tuple[str, ...] = (
     "Project Delivery Status",
-    "Releases",
+    "Releases/Milestones",
     "Risks",
     "Billability",
     "Team Structure",
@@ -65,8 +65,6 @@ def render_landing() -> None:
 def render_section_header(selected_section: str) -> None:
     if selected_section in _HEADERLESS_SECTIONS:
         return
-    eyebrow_label = "SWA / Release Info" if selected_section == "Releases" else "SWA / workforce planning"
-    st.markdown(f'<div class="eyebrow">{eyebrow_label}</div>', unsafe_allow_html=True)
     st.title(selected_section)
 
 

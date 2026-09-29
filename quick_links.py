@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from urllib.parse import urlsplit
 
 import streamlit as st
@@ -73,17 +75,105 @@ def _load_quick_links(file_path: str, mtime_ns: int, size: int) -> list[dict[str
         workbook.close()
 
 
-def render_quick_links(file_path: str = CCC_RESOURCES_FILE_PATH) -> None:
-    """Render each workbook entry as a named, clickable quick link."""
-    links = load_quick_links(file_path)
-    if not links:
-        st.info(f"No quick links found in the '{SHEET_NAME}' sheet.")
-        return
+def add_quick_link(file_path: str, name: str, link_name: str, url: str) -> bool:
+    """Append a named hyperlink to the workbook; return False for exact duplicates."""
+    name = name.strip()
+    link_name = link_name.strip() or name
+    url = url.strip()
+    if not name:
+        raise ValueError("Enter a folder or file name.")
+    if not url:
+        raise ValueError("Enter a link URL.")
 
-    for index, link in enumerate(links):
-        with st.container(key=f"quick-link-{index}", border=True):
-            name_column, link_column = st.columns([1, 2], vertical_alignment="center")
+    parsed_url = urlsplit(url)
+    if parsed_url.scheme.casefold() not in {"http", "https"} or not parsed_url.netloc:
+        raise ValueError("Enter a valid HTTP or HTTPS URL.")
+
+    path = require_workbook(file_path, "Resources workbook not found: {path}")
+    workbook = load_workbook(path, read_only=False, data_only=False)
+    temporary_path: Path | None = None
+    try:
+        sheet_name = next(
+            (sheet for sheet in workbook.sheetnames if sheet.strip().casefold() == SHEET_NAME.casefold()),
+            None,
+        )
+        if sheet_name is None:
+            raise ValueError(f"The workbook must contain a '{SHEET_NAME}' sheet.")
+
+        sheet = workbook[sheet_name]
+        headers = {
+            str(cell.value).strip().casefold(): index
+            for index, cell in enumerate(sheet[1])
+            if cell.value is not None
+        }
+        if any(column.casefold() not in headers for column in REQUIRED_COLUMNS):
+            raise ValueError(
+                f"The '{SHEET_NAME}' sheet must contain columns: {', '.join(REQUIRED_COLUMNS)}."
+            )
+
+        name_column = headers[REQUIRED_COLUMNS[0].casefold()] + 1
+        link_column = headers[REQUIRED_COLUMNS[1].casefold()] + 1
+        for row in sheet.iter_rows(min_row=2):
+            existing_name = str(row[name_column - 1].value or "").strip()
+            link_cell = row[link_column - 1]
+            existing_url = link_cell.hyperlink.target if link_cell.hyperlink else str(link_cell.value or "").strip()
+            if existing_name.casefold() == name.casefold() and existing_url == url:
+                return False
+
+        new_row = sheet.max_row + 1
+        sheet.cell(row=new_row, column=name_column, value=name)
+        link_cell = sheet.cell(row=new_row, column=link_column, value=link_name)
+        link_cell.hyperlink = url
+
+        with NamedTemporaryFile(dir=path.parent, suffix=path.suffix, delete=False) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+        workbook.save(temporary_path)
+        workbook.close()
+        os.replace(temporary_path, path)
+        temporary_path = None
+        _load_quick_links.clear()
+        return True
+    except PermissionError as error:
+        raise ValueError("Could not save the workbook. Close it in Excel and try again.") from error
+    finally:
+        workbook.close()
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+
+def render_quick_links(file_path: str = CCC_RESOURCES_FILE_PATH) -> None:
+    """Render a tab for adding links and a tab for opening saved links."""
+    add_tab, available_tab = st.tabs(["Add a quick link", "Available links"])
+
+    with add_tab:
+        with st.form("add_quick_link", clear_on_submit=True):
+            name_column, label_column = st.columns(2)
             with name_column:
-                st.markdown(f"**{link['name']}**")
-            with link_column:
-                st.link_button(link["link_name"], link["url"], width="stretch")
+                name = st.text_input("Folder or file name")
+            with label_column:
+                link_name = st.text_input("Link label", help="Defaults to the folder or file name when left blank.")
+            url = st.text_input("Link URL", placeholder="https://...")
+            submitted = st.form_submit_button("Add link", type="primary")
+
+        if submitted:
+            try:
+                added = add_quick_link(file_path, name, link_name, url)
+            except (FileNotFoundError, OSError, ValueError) as error:
+                st.error(str(error))
+            else:
+                message = "Quick link added." if added else "That quick link is already in the workbook."
+                st.success(message)
+
+    with available_tab:
+        links = load_quick_links(file_path)
+        if not links:
+            st.info(f"No quick links found in the '{SHEET_NAME}' sheet.")
+            return
+
+        for index, link in enumerate(links):
+            with st.container(key=f"quick-link-{index}", border=True):
+                name_column, link_column = st.columns([1, 2], vertical_alignment="center")
+                with name_column:
+                    st.markdown(f"**{link['name']}**")
+                with link_column:
+                    st.link_button(link["link_name"], link["url"], width="stretch")
