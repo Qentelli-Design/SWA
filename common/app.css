@@ -128,8 +128,7 @@
         transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
     }
 
-    [data-testid="stButton"] button p,
-    [data-testid="stButton"] button span {
+    [data-testid="stButton"] button p {
         font-family: 'DM Sans', sans-serif;
         font-size: 0.92rem !important;
         font-weight: 700 !important;
@@ -179,8 +178,7 @@
         min-height: 42px;
     }
 
-    [data-testid="stSidebar"] [data-testid="stButton"] button p,
-    [data-testid="stSidebar"] [data-testid="stButton"] button span {
+    [data-testid="stSidebar"] [data-testid="stButton"] button p {
         color: #17212b !important;
         font-size: 0.92rem !important;
         font-weight: 700 !important;
@@ -196,6 +194,13 @@
         border: 1px solid transparent;
         color: #17212b;
         font-weight: 700;
+    }
+
+    [class*="st-key-release-card-"] {
+        background: #ffffff;
+        border: 1px solid #cfe3df;
+        border-top: 3px solid #087f8c;
+        border-radius: 6px;
     }
 
     .st-key-navigation-grid [data-testid="stHorizontalBlock"]:first-child [data-testid="stColumn"]:nth-child(1) [data-testid="stButton"] button { background: #d9eee9; border-color: #9bcfc5; }

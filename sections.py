@@ -60,7 +60,6 @@ def _render_billability() -> None:
 
 def _render_project_delivery() -> None:
     _run(lambda: render_project_delivery_status(PROJECT_DELIVERY_STATUS_FILE_PATH))
-    st.info("Project Delivery Status is ready for its data view.")
 
 
 def _render_releases() -> None:

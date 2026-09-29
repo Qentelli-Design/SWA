@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from html import escape
 from pathlib import Path
+import unicodedata
 
 import pandas as pd
 import streamlit as st
@@ -12,6 +13,7 @@ from common.delivery import (
     STATUS_ORDER,
     count_badge,
     detail_value,
+    format_actual_date,
     format_date,
     normalize_progress,
     normalize_status,
@@ -47,7 +49,12 @@ def _load_release_sheets(file_path: str, mtime_ns: int, size: int) -> dict[str, 
         activity_types = frame["Activity Type"].astype(str).str.casefold()
         mask = activity_types.str.contains("release|certification", na=False)
         releases = frame.loc[mask].copy()
-        products[sheet_name] = releases[releases["Activities"].ne("")].reset_index(drop=True)
+        if "% Completed" in releases.columns:
+            started = releases["% Completed"].map(normalize_progress).gt(0)
+        else:
+            started = pd.Series(False, index=releases.index)
+        visible = releases[releases["Activities"].ne("") & started]
+        products[sheet_name] = visible.reset_index(drop=True)
     return products
 
 
@@ -66,9 +73,21 @@ def _combine_releases(products: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 def _release_download_frame(frame: pd.DataFrame) -> pd.DataFrame:
     download = frame[[column for column in _RELEASE_COLUMNS if column in frame.columns]].copy()
+    if "Actual End Date" in download.columns:
+        download["Actual End Date"] = download["Actual End Date"].map(_format_actual_end_date)
     if "% Completed" in download.columns:
         download["% Completed"] = download["% Completed"].apply(lambda value: f"{normalize_progress(value):.0f}%")
     return download
+
+
+def _format_actual_end_date(value: object) -> str:
+    if isinstance(value, str):
+        cleaned = "".join(character for character in value if unicodedata.category(character) != "Cf").strip()
+        if not cleaned:
+            return "Not available"
+        formatted = format_actual_date(cleaned)
+        return cleaned if formatted == "Not available" else formatted
+    return format_actual_date(value)
 
 
 @st.dialog("Release activity progress", width="large")
@@ -93,8 +112,8 @@ def show_release_details(product_name: str, frame: pd.DataFrame) -> None:
         progress = normalize_progress(row.get("% Completed", ""))
         status = normalize_status(row.get("Status", ""))
         with st.container(key=f"release-detail-{product_name}-{row_index}"):
-            activity_column, env_column, owner_column, date_column, status_column = st.columns(
-                [3.2, 0.9, 1.05, 0.9, 0.7],
+            activity_column, env_column, planned_date_column, actual_end_column, status_column = st.columns(
+                [3.0, 0.9, 0.9, 0.9, 0.7],
                 gap="xsmall",
                 vertical_alignment="center",
             )
@@ -107,9 +126,14 @@ def show_release_details(product_name: str, frame: pd.DataFrame) -> None:
                 st.progress(progress / 100)
             with env_column:
                 st.markdown(detail_value("Environment", row.get("Environment", "")), unsafe_allow_html=True)
-            with date_column:
+            with planned_date_column:
                 st.markdown(
-                    detail_value("Planned start", format_date(row.get("Planned Start Date", ""))),
+                    detail_value("Planned start date", format_date(row.get("Planned Start Date", ""))),
+                    unsafe_allow_html=True,
+                )
+            with actual_end_column:
+                st.markdown(
+                    detail_value("Actual end date", format_actual_date(row.get("Actual End Date", ""))),
                     unsafe_allow_html=True,
                 )
             with status_column:
@@ -126,29 +150,11 @@ def show_all_releases(frame: pd.DataFrame) -> None:
     display = _release_download_frame(frame)
     if "Environment" in display.columns:
         display["Environment"] = display["Environment"].fillna("Not available")
-    if "Actual End Date" in display.columns:
-        display["Actual End Date"] = display["Actual End Date"].fillna("")
 
     st.dataframe(display.reset_index(drop=True))
     st.download_button(
         "Download releases (CSV)",
         data=display.to_csv(index=False).encode("utf-8"),
-        file_name="all_releases.csv",
-        mime="text/csv",
-    )
-
-
-@st.dialog("Download all releases")
-def show_download_all(frame: pd.DataFrame) -> None:
-    st.markdown("<div class='dialog-product-title'>Download releases data</div>", unsafe_allow_html=True)
-    if frame.empty:
-        st.info("No release activities available to download.")
-        return
-
-    download = _release_download_frame(frame)
-    st.download_button(
-        "Download releases (CSV)",
-        data=download.to_csv(index=False).encode("utf-8"),
         file_name="all_releases.csv",
         mime="text/csv",
     )
@@ -163,17 +169,28 @@ def render_releases(file_path: str) -> None:
         return
 
     all_releases = _combine_releases(products)
-    with st.container(key="delivery-card-dashboard", border=True):
-        total_column, view_column, download_column = st.columns([1, 2, 2])
-        with total_column:
-            st.markdown("<div class='delivery-card-title'>Releases/Milestones</div>", unsafe_allow_html=True)
-            st.metric(label="Total releases", value=str(len(all_releases)))
-        with view_column:
-            if st.button("View all releases", key="view_all_releases", width="stretch"):
-                show_all_releases(all_releases)
-        with download_column:
-            if not all_releases.empty and st.button("Download releases data", key="download_all_releases", width="stretch"):
-                show_download_all(all_releases)
+    view_column, download_column = st.columns([2, 1], vertical_alignment="center")
+    with view_column:
+        if st.button(
+            f"View all releases ({len(all_releases)})",
+            key="view_all_releases",
+            width="stretch",
+            type="primary",
+            wrap=True,
+        ):
+            show_all_releases(all_releases)
+    with download_column:
+        st.download_button(
+            "Download releases (.csv)",
+            data=_release_download_frame(all_releases).to_csv(index=False).encode("utf-8"),
+            file_name="all_releases.csv",
+            mime="text/csv",
+            key="download_all_releases",
+            width="stretch",
+            on_click="ignore",
+            wrap=True,
+            disabled=all_releases.empty,
+        )
 
     for start in range(0, len(product_names), 3):
         columns = st.columns(3, gap="medium")
@@ -181,15 +198,17 @@ def render_releases(file_path: str) -> None:
             with column:
                 frame = products[product_name]
                 with st.container(key=f"release-card-{start + card_index}", border=True):
-                    st.markdown(
-                        f"<div class='delivery-card-title'>{escape(product_name)}</div>",
-                        unsafe_allow_html=True,
-                    )
-                    st.markdown(
-                        "<div class='count-badge-row'>" + count_badge("Green", len(frame)) + "</div>",
-                        unsafe_allow_html=True,
-                    )
-                    if st.button("View details", key=f"release_details_{product_name}", width="stretch"):
+                    st.subheader(product_name, anchor=False)
+                    status_counts = frame["Status"].map(normalize_status).value_counts()
+                    with st.container(horizontal=True, horizontal_alignment="left", gap="small"):
+                        for status, color in (("Green", "green"), ("Amber", "orange"), ("Red", "red")):
+                            st.badge(str(int(status_counts.get(status, 0))), color=color, help=status)
+                    if st.button(
+                        "View details",
+                        key=f"release_details_{product_name}",
+                        width="stretch",
+                        wrap=True,
+                    ):
                         show_release_details(product_name, frame)
 
 

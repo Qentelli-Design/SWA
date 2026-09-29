@@ -12,6 +12,7 @@ from common.delivery import (
     STATUS_ORDER,
     count_badge as _count_badge,
     detail_value as _detail_value,
+    format_actual_date as _format_actual_date,
     format_date as _format_date,
     normalize_progress,
     normalize_status,
@@ -118,7 +119,18 @@ def show_product_details(product_name: str, frame: pd.DataFrame) -> None:
             with priority_column:
                 st.markdown(_detail_value("Priority", _priority(row["Priority"]) or "NA"), unsafe_allow_html=True)
             with date_column:
-                st.markdown(_detail_value("Planned start", _format_date(row["Planned Start Date"])), unsafe_allow_html=True)
+                st.markdown(
+                    "<div class='project-date-value'>"
+                    + _detail_value("Planned start date", _format_date(row["Planned Start Date"]))
+                    + "</div>",
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    "<div class='project-date-value'>"
+                    + _detail_value("Actual end date", _format_actual_date(row["Actual End Date"]))
+                    + "</div>",
+                    unsafe_allow_html=True,
+                )
             with status_column:
                 st.markdown(_detail_value("Status", _status_badge(status), html=True), unsafe_allow_html=True)
 

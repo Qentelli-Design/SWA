@@ -20,6 +20,7 @@
         .detail-field { min-height: 2.15rem; padding-top: 0.05rem; }
         .detail-label { color: #718286; font-size: 0.62rem; font-weight: 700; line-height: 1; margin-bottom: 0.22rem; }
         .detail-value { color: #26383d; font-size: 0.76rem; font-weight: 650; line-height: 1.15; white-space: nowrap; }
+        .project-date-value .detail-value { position: relative; top: -4px; }
         [class*="st-key-activity-detail-"] { background: #fbfdfd; border: 2px solid #dfe9e7; border-radius: 6px; margin: 0 auto 0.25rem; max-width: 98%; padding: 0.28rem 0.56rem; }
         [class*="st-key-activity-detail-"] [data-testid="stHorizontalBlock"] { gap: 0.44rem; }
         [class*="st-key-activity-detail-"] [data-testid="stVerticalBlock"] { gap: 0.23rem; }

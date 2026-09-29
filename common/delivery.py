@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from html import escape
+import unicodedata
 
 import pandas as pd
 
@@ -41,8 +42,15 @@ def normalize_progress(value: object) -> float:
 def format_date(value: object) -> str:
     if pd.isna(value) or str(value).strip() in {"", "NaT", "nan"}:
         return "Not planned"
+    if isinstance(value, str):
+        value = "".join(character for character in value if unicodedata.category(character) != "Cf").strip()
     parsed = pd.to_datetime(value, errors="coerce")
     return "Not planned" if pd.isna(parsed) else parsed.strftime("%d %b %y")
+
+
+def format_actual_date(value: object) -> str:
+    formatted = format_date(value)
+    return "Not available" if formatted == "Not planned" else formatted
 
 
 def status_badge(status: str) -> str:
