@@ -28,6 +28,10 @@ CCC_RESOURCE_SKILLSET_FILE_PATH = _env_path(
     "CCC_RESOURCE_SKILLSET_FILE_PATH",
     "CCC_Resource_Skillset.xlsx",
 )
+BAU_PERFORMANCE_FILE_PATH = _env_path(
+    "BAU_PERFORMANCE_FILE_PATH",
+    "BAU_Planning_Maintenance_Quantifying_CCC.xlsx",
+)
 BRAND_IMAGE_PATH = Path(
     os.getenv("SWA_BRAND_IMAGE_PATH", str(BASE_DIR / "assets" / "Qentelli.jpg"))
 )

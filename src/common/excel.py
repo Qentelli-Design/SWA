@@ -80,3 +80,84 @@ def dataframe_to_excel_bytes(frame: pd.DataFrame, sheet_name: str = "Resources")
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
         frame.to_excel(writer, index=False, sheet_name=sheet_name)
     return buffer.getvalue()
+
+
+_MONTH_NAMES = frozenset(
+    {
+        "january", "february", "march", "april", "may", "june",
+        "july", "august", "september", "october", "november", "december",
+    }
+)
+_MISSING_VALUE_TOKENS = frozenset({"na", "n/a", "-", "null", "none", ""})
+
+
+def _clean_activity_value(value: object) -> float | None:
+    """Normalize a monthly cell to a float, or ``None`` for NA/blank/dash markers."""
+    if pd.isna(value):
+        return None
+    if isinstance(value, str) and value.strip().casefold() in _MISSING_VALUE_TOKENS:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def read_activity_table(path: Path, sheet_name: str, activity_label: str = "Activities") -> pd.DataFrame:
+    """Read a month-by-activity table from a BAU-style worksheet.
+
+    Scans for the header row containing ``activity_label``, then reads the
+    activity name plus any adjacent month columns beneath it, stopping at the
+    first row with a blank activity name. Recognized missing-value tokens
+    (NA, N/A, "-", null, blank) are converted to ``None`` rather than zero.
+    Reusable across product sheets that follow the same layout (Activities
+    column followed by month columns).
+    """
+    raw = pd.read_excel(path, sheet_name=sheet_name, header=None, engine="openpyxl")
+
+    header_row_index: int | None = None
+    for index in range(len(raw)):
+        row_values = raw.iloc[index].astype(str).str.strip().str.casefold()
+        if row_values.eq(activity_label.casefold()).any():
+            header_row_index = index
+            break
+    if header_row_index is None:
+        raise ValueError(f"Could not find an '{activity_label}' header in sheet '{sheet_name}'.")
+
+    header = raw.iloc[header_row_index].astype(str).str.strip()
+    activity_columns = header.index[header.str.casefold() == activity_label.casefold()]
+    if activity_columns.empty:
+        raise ValueError(f"Could not find an '{activity_label}' column in sheet '{sheet_name}'.")
+    activity_col = activity_columns[0]
+
+    month_columns = [(column, name) for column, name in header.items() if name.casefold() in _MONTH_NAMES]
+    if not month_columns:
+        raise ValueError(f"No month columns were found next to '{activity_label}' in sheet '{sheet_name}'.")
+
+    records: list[dict[str, object]] = []
+    for row_index in range(header_row_index + 1, len(raw)):
+        activity_name = raw.iat[row_index, activity_col]
+        if pd.isna(activity_name) or not str(activity_name).strip():
+            break
+        record: dict[str, object] = {"Activity": str(activity_name).strip()}
+        for column, month_name in month_columns:
+            record[month_name] = _clean_activity_value(raw.iat[row_index, column])
+        records.append(record)
+
+    columns = ["Activity"] + [month_name for _, month_name in month_columns]
+    return pd.DataFrame(records, columns=columns)
+
+
+@st.cache_data(show_spinner=False, ttl=CACHE_TTL, max_entries=16)
+def _read_activity_table_cached(
+    file_path: str, mtime_ns: int, size: int, sheet_name: str, activity_label: str
+) -> pd.DataFrame:
+    del mtime_ns, size
+    return read_activity_table(Path(file_path), sheet_name, activity_label)
+
+
+def read_activity_sheet(file_path: str, sheet_name: str, activity_label: str = "Activities") -> pd.DataFrame:
+    """Cached read of an activity/month table, refreshed when the workbook changes."""
+    path = Path(file_path).expanduser()
+    resolved, mtime_ns, size = workbook_token(path)
+    return _read_activity_table_cached(resolved, mtime_ns, size, sheet_name, activity_label)

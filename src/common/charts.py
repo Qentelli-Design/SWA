@@ -6,7 +6,10 @@ from html import escape
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
+
+ACTIVITY_CHART_HEIGHT = 260
 
 
 def render_summary_chart(
@@ -56,3 +59,62 @@ def render_summary_chart(
         paper_bgcolor="rgba(0,0,0,0)",
     )
     st.plotly_chart(chart, config={"displayModeBar": False})
+
+
+def create_activity_line_chart(
+    activity_name: str,
+    months: list[str],
+    values: list[float | None],
+    accent: str = "#087f8c",
+    height: int = ACTIVITY_CHART_HEIGHT,
+) -> go.Figure:
+    """One reusable monthly trend line for a single BAU activity.
+
+    Kept generic (name + months + values in) so any future product sheet with
+    the same Activity/month layout can reuse it without duplicating chart code.
+    """
+    labels = [
+        "" if value is None or pd.isna(value) else f"{int(round(value)):,}" for value in values
+    ]
+    numeric_values = [value for value in values if value is not None and not pd.isna(value)]
+    y_range = None
+    if numeric_values:
+        low, high = min(numeric_values), max(numeric_values)
+        span = (high - low) or high or 1
+        # Extra headroom above the highest point so the "top center" value label never clips.
+        y_range = [max(0, low - span * 0.15), high + span * 0.32]
+
+    figure = go.Figure(
+        go.Scatter(
+            x=months,
+            y=values,
+            mode="lines+markers+text",
+            line=dict(color=accent, width=2.5, shape="spline", smoothing=0.3),
+            marker=dict(color=accent, size=9, line=dict(color="#ffffff", width=1.5)),
+            text=labels,
+            textposition="top center",
+            textfont=dict(color="#17212b", size=12, family="DM Sans, Arial, sans-serif"),
+            hovertemplate=f"{escape(activity_name)}<br>%{{x}}: %{{y:,.0f}}<extra></extra>",
+            connectgaps=False,
+            showlegend=False,
+            cliponaxis=False,
+        )
+    )
+    figure.update_layout(
+        height=height,
+        margin=dict(l=8, r=18, t=34, b=8),
+        showlegend=False,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="DM Sans, Arial, sans-serif"),
+        xaxis=dict(showgrid=False, tickfont=dict(size=12, color="#65727d")),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="#eef2f1",
+            zeroline=False,
+            tickformat=",d",
+            tickfont=dict(size=11, color="#8a9598"),
+            range=y_range,
+        ),
+    )
+    return figure

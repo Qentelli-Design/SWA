@@ -11,6 +11,7 @@ from config import (
     BRAND_IMAGE_PATH,
     CCC_RESOURCE_SKILLSET_FILE_PATH,
     CCC_RESOURCES_FILE_PATH,
+    BAU_PERFORMANCE_FILE_PATH,
     ORG_STRUCTURE_FILE_PATH,
     PROJECT_DELIVERY_STATUS_FILE_PATH,
     SWA_IMAGE_PATH,
@@ -20,17 +21,22 @@ SECTIONS: tuple[str, ...] = (
     "Project Delivery Status",
     "Releases/Milestones",
     "Risks",
-    "Billability",
+    "BAU Performance",
     "Team Structure",
     "ORG Structure",
     "Skills",
     "Certifications",
     "Quick Links",
+    "Billability",
 )
 
-_HEADERLESS_SECTIONS = frozenset({"Team Structure", "ORG Structure", "Project Delivery Status"})
+_HEADERLESS_SECTIONS = frozenset(
+    {"Team Structure", "ORG Structure", "Project Delivery Status", "BAU Performance"}
+)
 _SECTION_STATE = "dashboard_section"
-_PRODUCT_WORKBOOK_SECTIONS = frozenset({"Project Delivery Status", "Releases/Milestones", "Risks"})
+_PRODUCT_WORKBOOK_SECTIONS = frozenset(
+    {"Project Delivery Status", "Releases/Milestones", "Risks", "BAU Performance"}
+)
 _SOURCE_WORKBOOKS = {
     "Project Delivery Status": PROJECT_DELIVERY_STATUS_FILE_PATH,
     "Releases/Milestones": PROJECT_DELIVERY_STATUS_FILE_PATH,
@@ -40,6 +46,7 @@ _SOURCE_WORKBOOKS = {
     "ORG Structure": ORG_STRUCTURE_FILE_PATH,
     "Skills": CCC_RESOURCE_SKILLSET_FILE_PATH,
     "Quick Links": CCC_RESOURCES_FILE_PATH,
+    "BAU Performance": BAU_PERFORMANCE_FILE_PATH,
 }
 _SOURCE_SHEETS = {
     "Billability": ("Resource List",),
@@ -85,10 +92,8 @@ def render_landing() -> None:
             grid_columns = st.columns(4)
             if row_index == 0:
                 row_columns = grid_columns[1:3]
-            elif row_index == 1:
-                row_columns = grid_columns
             else:
-                row_columns = grid_columns[:3]
+                row_columns = grid_columns[: len(row_sections)]
             for column, section in zip(row_columns, row_sections):
                 with column:
                     with st.container(key=f"navigation-item-{section_index}"):
@@ -139,7 +144,7 @@ def render_sidebar(selected_section: str) -> None:
         if BRAND_IMAGE_PATH.is_file():
             st.image(str(BRAND_IMAGE_PATH), width=90)
         st.button(
-            "Back to dashboard",
+            "Dashboard overview",
             width="stretch",
             type="secondary",
             on_click=select_section,

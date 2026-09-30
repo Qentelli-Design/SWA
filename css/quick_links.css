@@ -1,0 +1,12 @@
+        [class*="st-key-quick-links-view"] [data-testid="stTabs"] [role="tablist"] { background: #f2f6f5; border: 1px solid #e0e9e8; border-radius: 8px; gap: 0.45rem; padding: 0.35rem; }
+        [class*="st-key-quick-links-view"] [data-testid="stTab"] { background: #e9f0ef; border: 1px solid #d6e1df; border-radius: 6px; color: #53676b; padding: 0.55rem 0.9rem; }
+        [class*="st-key-quick-links-view"] [data-testid="stTab"][aria-selected="true"] { background: #dcecea; border-color: #a9cbc6; color: #173c43; }
+        [class*="st-key-quick-links-view"] [data-testid="stTab"] [data-testid="stMarkdownContainer"] p { font-weight: 700; margin: 0; }
+        [class*="st-key-quick-links-view"] [data-testid="stTab"] .react-aria-SelectionIndicator { display: none; }
+        [class*="st-key-quick-links-view"] [data-testid="stTab"]:hover:not([aria-selected="true"]) { background: #ffffff; border-color: #b9d1ce; }
+
+        [class*="st-key-quick-link-row-"] { background: #ffffff; border: 1px solid #e1e8e8; border-left: 3px solid #83b9b1; border-radius: 7px; padding: 0.2rem 0.45rem; }
+        [class*="st-key-quick-link-row-"] [data-testid="stLinkButton"] a { background: #f1f7f6; border: 1px solid #c9ddda; border-radius: 6px; color: #075f69; }
+        [class*="st-key-quick-link-row-"] [data-testid="stLinkButton"] a:hover { background: #e4f1ef; border-color: #83b9b1; color: #064e56; }
+
+        [class*="st-key-quick-links-form"] { background: #ffffff; border: 1px solid #e1e8e8; border-radius: 8px; padding: 1rem 1.1rem; }

@@ -11,10 +11,12 @@ from common.charts import render_summary_chart
 from config import (
     CCC_RESOURCE_SKILLSET_FILE_PATH,
     CCC_RESOURCES_FILE_PATH,
+    BAU_PERFORMANCE_FILE_PATH,
     ORG_STRUCTURE_FILE_PATH,
     PROJECT_DELIVERY_STATUS_FILE_PATH,
 )
 from data_loader import build_billability_summary, build_risk_summary_from_product_status, load_risks_from_product_status
+from bau_performance import render_bau_performance
 from org_structure import render_org_structure
 from project_delivery_status import render_project_delivery_status
 from quick_links import render_quick_links
@@ -78,6 +80,10 @@ def _render_skills() -> None:
 
 def _render_quick_links() -> None:
     _run(lambda: render_quick_links(CCC_RESOURCES_FILE_PATH))
+
+
+def _render_bau_performance() -> None:
+    _run(lambda: render_bau_performance(BAU_PERFORMANCE_FILE_PATH))
 
 
 def _select_risk_status(status: str) -> None:
@@ -173,6 +179,7 @@ _HANDLERS: dict[str, Callable[[], None]] = {
     "Risks": _render_risks,
     "Skills": _render_skills,
     "Quick Links": _render_quick_links,
+    "BAU Performance": _render_bau_performance,
 }
 
 

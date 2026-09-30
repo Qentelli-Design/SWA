@@ -11,10 +11,12 @@ import streamlit as st
 from openpyxl import load_workbook
 
 from common.excel import CACHE_TTL, require_workbook, workbook_token
+from common.styles import inject_css
 from config import CCC_RESOURCES_FILE_PATH
 
 SHEET_NAME = "Sharepoint links"
 REQUIRED_COLUMNS = ("Folder or File name", "Link")
+_QUICK_LINK_FEEDBACK_KEY = "quick_link_feedback"
 
 
 def load_quick_links(file_path: str = CCC_RESOURCES_FILE_PATH) -> list[dict[str, str]]:
@@ -142,38 +144,50 @@ def add_quick_link(file_path: str, name: str, link_name: str, url: str) -> bool:
 
 
 def render_quick_links(file_path: str = CCC_RESOURCES_FILE_PATH) -> None:
-    """Render a tab for adding links and a tab for opening saved links."""
-    add_tab, available_tab = st.tabs(["Add a quick link", "Available links"])
+    """Render current links and a form for adding links in separate tabs."""
+    inject_css("quick_links.css")
+    links = load_quick_links(file_path)
+    feedback = st.session_state.pop(_QUICK_LINK_FEEDBACK_KEY, None)
 
-    with add_tab:
-        with st.form("add_quick_link", clear_on_submit=True):
-            name_column, label_column = st.columns(2)
-            with name_column:
-                name = st.text_input("Folder or file name")
-            with label_column:
-                link_name = st.text_input("Link label", help="Defaults to the folder or file name when left blank.")
-            url = st.text_input("Link URL", placeholder="https://...")
-            submitted = st.form_submit_button("Add link", type="primary")
+    with st.container(key="quick-links-view"):
+        current_tab, add_tab = st.tabs([f"Current links ({len(links)})", "Add a link"])
 
-        if submitted:
-            try:
-                added = add_quick_link(file_path, name, link_name, url)
-            except (FileNotFoundError, OSError, ValueError) as error:
-                st.error(str(error))
+        with current_tab:
+            if feedback:
+                st.success(feedback)
+            if not links:
+                st.info(f"No quick links found in the '{SHEET_NAME}' sheet.")
             else:
-                message = "Quick link added." if added else "That quick link is already in the workbook."
-                st.success(message)
+                for index, link in enumerate(links):
+                    with st.container(key=f"quick-link-row-{index}", border=True):
+                        name_column, action_column = st.columns([3, 1], vertical_alignment="center")
+                        with name_column:
+                            st.markdown(f"**{link['name']}**")
+                            st.caption(link["link_name"])
+                        with action_column:
+                            st.link_button("Open link", link["url"], width="stretch")
 
-    with available_tab:
-        links = load_quick_links(file_path)
-        if not links:
-            st.info(f"No quick links found in the '{SHEET_NAME}' sheet.")
-            return
+        with add_tab:
+            with st.container(key="quick-links-form"):
+                with st.form("add_quick_link", clear_on_submit=True):
+                    name_column, label_column = st.columns(2)
+                    with name_column:
+                        name = st.text_input("Folder or file name")
+                    with label_column:
+                        link_name = st.text_input(
+                            "Link label",
+                            help="Defaults to the folder or file name when left blank.",
+                        )
+                    url = st.text_input("Link URL", placeholder="https://...")
+                    submitted = st.form_submit_button("Add link", type="primary")
 
-        for index, link in enumerate(links):
-            with st.container(key=f"quick-link-{index}", border=True):
-                name_column, link_column = st.columns([1, 2], vertical_alignment="center")
-                with name_column:
-                    st.markdown(f"**{link['name']}**")
-                with link_column:
-                    st.link_button(link["link_name"], link["url"], width="stretch")
+            if submitted:
+                try:
+                    added = add_quick_link(file_path, name, link_name, url)
+                except (FileNotFoundError, OSError, ValueError) as error:
+                    st.error(str(error))
+                else:
+                    if added:
+                        st.session_state[_QUICK_LINK_FEEDBACK_KEY] = "Quick link added."
+                        st.rerun()
+                    st.info("That quick link is already in the workbook.")
