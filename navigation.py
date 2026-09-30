@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import streamlit as st
 
-from config import BRAND_IMAGE_PATH, SWA_IMAGE_PATH
+from common.excel import sheet_names
+from config import (
+    BRAND_IMAGE_PATH,
+    CCC_RESOURCE_SKILLSET_FILE_PATH,
+    CCC_RESOURCES_FILE_PATH,
+    ORG_STRUCTURE_FILE_PATH,
+    PROJECT_DELIVERY_STATUS_FILE_PATH,
+    SWA_IMAGE_PATH,
+)
 
 SECTIONS: tuple[str, ...] = (
     "Project Delivery Status",
@@ -20,6 +30,24 @@ SECTIONS: tuple[str, ...] = (
 
 _HEADERLESS_SECTIONS = frozenset({"Team Structure", "ORG Structure", "Project Delivery Status"})
 _SECTION_STATE = "dashboard_section"
+_PRODUCT_WORKBOOK_SECTIONS = frozenset({"Project Delivery Status", "Releases/Milestones", "Risks"})
+_SOURCE_WORKBOOKS = {
+    "Project Delivery Status": PROJECT_DELIVERY_STATUS_FILE_PATH,
+    "Releases/Milestones": PROJECT_DELIVERY_STATUS_FILE_PATH,
+    "Risks": PROJECT_DELIVERY_STATUS_FILE_PATH,
+    "Billability": CCC_RESOURCES_FILE_PATH,
+    "Team Structure": CCC_RESOURCES_FILE_PATH,
+    "ORG Structure": ORG_STRUCTURE_FILE_PATH,
+    "Skills": CCC_RESOURCE_SKILLSET_FILE_PATH,
+    "Quick Links": CCC_RESOURCES_FILE_PATH,
+}
+_SOURCE_SHEETS = {
+    "Billability": ("Resource List",),
+    "Team Structure": ("Resource List",),
+    "ORG Structure": ("Resource List",),
+    "Skills": ("Resource List", "Skill Categories"),
+    "Quick Links": ("Sharepoint links",),
+}
 
 
 def ensure_session_state() -> None:
@@ -47,19 +75,31 @@ def render_landing() -> None:
         if SWA_IMAGE_PATH.is_file():
             st.image(str(SWA_IMAGE_PATH), width=100)
 
+    st.space(10)
     with st.container(key="navigation-grid"):
-        for start in range(0, len(SECTIONS), 4):
-            row = st.columns(4)
-            row_sections = SECTIONS[start : start + 4]
-            for column, section in zip(row, row_sections):
+        section_rows = (SECTIONS[:2], SECTIONS[2:6], SECTIONS[6:])
+        section_index = 0
+        for row_index, row_sections in enumerate(section_rows):
+            if row_index:
+                st.space(10)
+            grid_columns = st.columns(4)
+            if row_index == 0:
+                row_columns = grid_columns[1:3]
+            elif row_index == 1:
+                row_columns = grid_columns
+            else:
+                row_columns = grid_columns[:3]
+            for column, section in zip(row_columns, row_sections):
                 with column:
-                    st.button(
-                        section,
-                        key=f"navigation_{section}",
-                        width="stretch",
-                        on_click=select_section,
-                        args=(section,),
-                    )
+                    with st.container(key=f"navigation-item-{section_index}"):
+                        st.button(
+                            section,
+                            key=f"navigation_{section}",
+                            width="stretch",
+                            on_click=select_section,
+                            args=(section,),
+                        )
+                section_index += 1
 
 
 def render_section_header(selected_section: str) -> None:
@@ -68,7 +108,33 @@ def render_section_header(selected_section: str) -> None:
     st.title(selected_section)
 
 
-def render_sidebar() -> None:
+def _render_source_details(selected_section: str) -> None:
+    st.caption("Data source")
+    if selected_section == "Certifications":
+        st.write("No data source configured for this tab.")
+        return
+
+    workbook_path = _SOURCE_WORKBOOKS.get(selected_section)
+    if workbook_path is None:
+        st.write("No data source configured for this tab.")
+        return
+
+    if selected_section in _PRODUCT_WORKBOOK_SECTIONS:
+        try:
+            worksheets = sheet_names(workbook_path)
+        except (FileNotFoundError, OSError, ValueError):
+            worksheets = ("Unable to read worksheet names",)
+    else:
+        worksheets = _SOURCE_SHEETS[selected_section]
+    worksheet_label = "All sheets" if len(worksheets) > 1 else worksheets[0]
+
+    st.markdown("**Excel workbook**")
+    st.write(Path(workbook_path).name)
+    st.markdown("**Worksheet(s)**")
+    st.write(worksheet_label)
+
+
+def render_sidebar(selected_section: str) -> None:
     with st.sidebar:
         if BRAND_IMAGE_PATH.is_file():
             st.image(str(BRAND_IMAGE_PATH), width=90)
@@ -79,3 +145,5 @@ def render_sidebar() -> None:
             on_click=select_section,
             args=(None,),
         )
+        st.divider()
+        _render_source_details(selected_section)

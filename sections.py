@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from html import escape
-from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -112,14 +110,6 @@ def _render_risks() -> None:
         st.error(str(error))
         return
 
-    workbook_name = escape(Path(PROJECT_DELIVERY_STATUS_FILE_PATH).name)
-    with st.sidebar:
-        st.divider()
-        st.markdown(
-            "<div class='source-pill'><strong>Source sheet</strong><br>Product_Status_Report<br><br>"
-            f"<strong>Workbook</strong><br>{workbook_name}</div>",
-            unsafe_allow_html=True,
-        )
     render_summary_chart(
         "Risks",
         risk_summary,

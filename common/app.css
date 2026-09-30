@@ -1,6 +1,9 @@
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
     :root {
+        --app-font: 'DM Sans', sans-serif;
+        --main-heading-size: 1.35rem;
+        --inner-heading-size: calc(var(--main-heading-size) / 2);
         --ink: #17212b;
         --muted: #65727d;
         --paper: #f4f7f6;
@@ -11,6 +14,7 @@
     .stApp {
         background: var(--paper);
         color: var(--ink);
+        font-family: var(--app-font);
     }
 
     [data-testid="stAppViewContainer"] .block-container {
@@ -57,27 +61,62 @@
         color: #75d3cc !important;
     }
 
-    h1, h2, h3, [data-testid="stMetricValue"] {
-        font-family: 'Space Grotesk', sans-serif;
+    .stApp button,
+    .stApp input,
+    .stApp textarea,
+    .stApp select,
+    .stApp p,
+    .stApp label,
+    .stApp [data-testid="stMarkdownContainer"],
+    .stApp [data-testid="stWidgetLabel"],
+    .stApp [data-testid="stCaptionContainer"],
+    .stApp [data-testid="stMetricLabel"],
+    .stApp [data-testid="stMetricValue"],
+    .stApp [data-testid="stDataFrame"],
+    .stApp [data-testid="stTable"] {
+        font-family: var(--app-font);
         letter-spacing: 0;
     }
 
-    p, label, .stMarkdown, .stCaption, [data-testid="stMetricLabel"] {
-        font-family: 'DM Sans', sans-serif;
+    .stApp h1,
+    .stApp .landing-title,
+    .stApp .delivery-title,
+    .stApp .org-title,
+    .stApp .page-title {
+        font-family: var(--app-font) !important;
+        font-size: var(--main-heading-size) !important;
+        line-height: 1.2 !important;
         letter-spacing: 0;
     }
 
-    h1 {
-        font-size: 2.45rem;
-        line-height: 1.05;
-        margin-top: 0.35rem;
-        margin-bottom: 0.15rem;
+    .stApp h2,
+    .stApp h3,
+    .stApp h4,
+    .stApp h5,
+    .stApp h6,
+    .stApp .section-title,
+    .stApp .dialog-product-title,
+    .stApp .delivery-card-title,
+    .stApp .team-heading,
+    .stApp .governance-heading,
+    .stApp .product-rail-title,
+    .stApp .selected-product-name,
+    .stApp .member-heading,
+    .stApp .org-root-name,
+    .stApp .org-branch-label,
+    .stApp .org-manager-note,
+    .stApp .product-title h2,
+    .stApp [data-testid="stExpander"] summary {
+        font-family: var(--app-font) !important;
+        font-size: var(--inner-heading-size) !important;
+        line-height: 1.2 !important;
+        letter-spacing: 0;
     }
 
     .landing-title {
         color: #087f8c;
-        font-family: 'Space Grotesk', sans-serif;
-        font-size: 2.35rem;
+        font-family: var(--app-font);
+        font-size: var(--main-heading-size);
         font-weight: 700;
         margin: 0;
         padding-top: 0.35rem;
@@ -203,14 +242,15 @@
         border-radius: 6px;
     }
 
-    .st-key-navigation-grid [data-testid="stHorizontalBlock"]:first-child [data-testid="stColumn"]:nth-child(1) [data-testid="stButton"] button { background: #d9eee9; border-color: #9bcfc5; }
-    .st-key-navigation-grid [data-testid="stHorizontalBlock"]:first-child [data-testid="stColumn"]:nth-child(2) [data-testid="stButton"] button { background: #dce9f5; border-color: #a8c6df; }
-    .st-key-navigation-grid [data-testid="stHorizontalBlock"]:first-child [data-testid="stColumn"]:nth-child(3) [data-testid="stButton"] button { background: #f7e6d5; border-color: #e4c19d; }
-    .st-key-navigation-grid [data-testid="stHorizontalBlock"]:first-child [data-testid="stColumn"]:nth-child(4) [data-testid="stButton"] button { background: #f3e5e5; border-color: #dfbaba; }
-    .st-key-navigation-grid [data-testid="stHorizontalBlock"]:last-child [data-testid="stColumn"]:nth-child(1) [data-testid="stButton"] button { background: #e8e1f3; border-color: #c6b6df; }
-    .st-key-navigation-grid [data-testid="stHorizontalBlock"]:last-child [data-testid="stColumn"]:nth-child(2) [data-testid="stButton"] button { background: #e8f0d9; border-color: #c1d59e; }
-    .st-key-navigation-grid [data-testid="stHorizontalBlock"]:last-child [data-testid="stColumn"]:nth-child(3) [data-testid="stButton"] button { background: #e4edf1; border-color: #b9cfd8; }
-    .st-key-navigation-grid [data-testid="stHorizontalBlock"]:last-child [data-testid="stColumn"]:nth-child(4) [data-testid="stButton"] button { background: #f5e8c8; border-color: #dfc98e; }
+    .st-key-navigation-item-0 [data-testid="stButton"] button { background: #d9eee9; border-color: #9bcfc5; }
+    .st-key-navigation-item-1 [data-testid="stButton"] button { background: #dce9f5; border-color: #a8c6df; }
+    .st-key-navigation-item-2 [data-testid="stButton"] button { background: #f7e6d5; border-color: #e4c19d; }
+    .st-key-navigation-item-3 [data-testid="stButton"] button { background: #f3e5e5; border-color: #dfbaba; }
+    .st-key-navigation-item-4 [data-testid="stButton"] button { background: #e8e1f3; border-color: #c6b6df; }
+    .st-key-navigation-item-5 [data-testid="stButton"] button { background: #e8f0d9; border-color: #c1d59e; }
+    .st-key-navigation-item-6 [data-testid="stButton"] button { background: #e4edf1; border-color: #b9cfd8; }
+    .st-key-navigation-item-7 [data-testid="stButton"] button { background: #f5e8c8; border-color: #dfc98e; }
+    .st-key-navigation-item-8 [data-testid="stButton"] button { background: #e7eaf2; border-color: #bfc8da; }
 
     .st-key-navigation-grid [data-testid="stButton"] button:hover {
         filter: brightness(0.96);

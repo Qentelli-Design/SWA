@@ -20,5 +20,5 @@ if selected_section is None:
     st.stop()
 
 render_section_header(selected_section)
-render_sidebar()
+render_sidebar(selected_section)
 render_selected_section(selected_section)
