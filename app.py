@@ -1,8 +1,11 @@
-"""SWA dashboard entry point.
+"""Root Streamlit entry point for the SWA dashboard."""
 
-Page chrome and routing live here. Section views and workbook logic live in
-their own modules so each screen can be reused without rerunning the others.
-"""
+import sys
+from pathlib import Path
+
+SRC_DIR = Path(__file__).resolve().parent / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 
 import streamlit as st
 

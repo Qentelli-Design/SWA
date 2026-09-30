@@ -6,16 +6,17 @@ A Streamlit dashboard for workforce, skills, project delivery, releases, risks, 
 
 ```powershell
 python -m pip install -r requirements.txt
-python -m streamlit run src/app.py
+python -m streamlit run app.py
 ```
 
 ## Project layout
 
 ```text
+app.py        Streamlit entry point
 assets/       Dashboard images
 css/          Application and page stylesheets
 excel/        Source workbooks
-src/          Application and page Python modules
+src/          Page and application Python modules
 src/common/   Shared Python helpers
 ```
 
@@ -31,4 +32,4 @@ Set `CCC_RESOURCES_FILE_PATH`, `ORG_STRUCTURE_FILE_PATH`, `PROJECT_DELIVERY_STAT
 
 ## Deploy
 
-Keep workbooks in `excel/`, images in `assets/`, stylesheets in `css/`, and Python modules in `src/`. In Streamlit Community Cloud, set the main file to `src/app.py`. Confirm company data is approved for hosting before publishing workbooks.
+Keep the Streamlit entry point `app.py` at the repository root, other Python modules in `src/`, workbooks in `excel/`, images in `assets/`, and stylesheets in `css/`. In Streamlit Community Cloud, set the main file to `app.py`. Confirm company data is approved for hosting before publishing workbooks.
