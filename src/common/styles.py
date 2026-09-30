@@ -7,7 +7,9 @@ from pathlib import Path
 
 import streamlit as st
 
-_STYLE_DIR = Path(__file__).resolve().parent
+from config import BASE_DIR
+
+_STYLE_DIR = BASE_DIR / "css"
 
 
 @lru_cache(maxsize=4)

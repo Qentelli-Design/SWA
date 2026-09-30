@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from html import escape
+
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -15,15 +17,16 @@ def render_summary_chart(
     empty_message: str,
     top_n: int = 10,
     value_column: str = "Resources",
-    details: pd.DataFrame | None = None,
+    heading_class: str | None = None,
 ) -> None:
-    """Draw a horizontal bar chart from an aggregated summary frame.
-
-    ``details`` is accepted so existing callers can pass the source rows.
-    The chart itself is driven only by ``summary``.
-    """
-    del details
-    st.subheader(title)
+    """Draw a horizontal bar chart from an aggregated summary frame."""
+    if heading_class:
+        st.markdown(
+            f"<h3 class='{escape(heading_class)}'>{escape(title)}</h3>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.subheader(title)
     if summary.empty:
         st.info(empty_message)
         return

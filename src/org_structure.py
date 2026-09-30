@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from common.excel import CACHE_TTL, read_resource_list, require_workbook, workbook_token
+from common.styles import inject_css
 
 
 ROOT_NAME = "Siva Rao Kompella S V"
@@ -128,18 +129,6 @@ def build_hierarchy(frame: pd.DataFrame) -> dict:
     return make_node(root_key, ROOT_NAME, "", frozenset())
 
 
-def get_connected_resources(hierarchy: dict) -> set[str]:
-    connected = set()
-
-    def walk(node: dict) -> None:
-        connected.add(node["key"])
-        for child in node["children"]:
-            walk(child)
-
-    walk(hierarchy)
-    return connected
-
-
 def _node_display(node: dict) -> str:
     return f"{node['name']} - {node['product']}" if node["product"] else node["name"]
 
@@ -181,27 +170,7 @@ def render_org_chart(hierarchy: dict) -> None:
 
 
 def _render_styles() -> None:
-    st.markdown(
-        """
-        <style>
-        .org-kicker { color: #087f8c; font-size: 0.9rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
-        .org-title { color: #173c43; font-size: 1.8rem !important; font-weight: 750; margin: 0.15rem 0 0.15rem; }
-        .org-subtitle { color: #65727d; font-size: 0.95rem; margin: 0 0 0.9rem; }
-        .org-chart-shell { background: #f7fbfa; border: 1px solid #d6e7e3; border-left: 4px solid #087f8c; border-radius: 8px; padding: 0.35rem; }
-        .org-root-card { background: #087f8c; border: 1px solid #075f69; border-radius: 8px; color: #ffffff; margin: 0 0 0.7rem; padding: 0.75rem 0.9rem; }
-        .org-root-label, .org-branch-label, .org-manager-note { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
-        .org-root-label { color: #bfe8e3; }
-        .org-root-name { font-size: 1.05rem; font-weight: 800; margin-top: 0.2rem; }
-        .org-branch-label { color: #48636a; margin: 0.15rem 0 0.35rem; }
-        div[data-testid="stExpander"] { background: #eaf6f4; border: 1px solid #9ccfc8; border-left: 4px solid #087f8c; border-radius: 8px; margin: 0 0 0.4rem; }
-        div[data-testid="stExpander"] summary { color: #173c43; font-size: 0.86rem; font-weight: 800; }
-        .org-manager-note { color: #087f8c; margin: 0.1rem 0 0.35rem; }
-        .org-resource-card { background: #ffffff; border: 1px solid #dfe7e9; border-radius: 6px; color: #26383d; font-size: 0.82rem; font-weight: 650; margin: 0 0 0.3rem; padding: 0.45rem 0.6rem; }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    inject_css("org.css")
 
 def render_org_structure(file_path: str) -> None:
     _render_styles()
@@ -211,7 +180,6 @@ def render_org_structure(file_path: str) -> None:
         st.warning(f"No connected reporting relationships were found below {ROOT_NAME}.")
         return
 
-    st.markdown("<div class='org-kicker'>CCC organization</div>", unsafe_allow_html=True)
     st.markdown("<h1 class='org-title'>CCC Organization Structure</h1>", unsafe_allow_html=True)
     st.markdown("<p class='org-subtitle'>Reporting Hierarchy</p>", unsafe_allow_html=True)
     with st.container(border=True):

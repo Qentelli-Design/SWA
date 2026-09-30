@@ -41,7 +41,7 @@ def _render_billability() -> None:
     )
 
     def _load() -> None:
-        summary, details = build_billability_summary(CCC_RESOURCES_FILE_PATH)
+        summary, _ = build_billability_summary(CCC_RESOURCES_FILE_PATH)
         render_summary_chart(
             "Billability",
             summary,
@@ -50,7 +50,7 @@ def _render_billability() -> None:
             "No billability data was found.",
             top_n=30,
             value_column="Resources",
-            details=details,
+            heading_class="billability-summary-heading",
         )
 
     _run(_load)
@@ -86,7 +86,10 @@ def _select_risk_status(status: str) -> None:
 
 def _render_risk_table(selected_risks: pd.DataFrame, selected_status: str) -> None:
     detail_columns = [column for column in _RISK_DETAIL_COLUMNS if column in selected_risks.columns]
-    st.subheader(f"{selected_status} risks")
+    if selected_status == "All":
+        st.markdown("<h3 class='all-risks-heading'>All risks</h3>", unsafe_allow_html=True)
+    else:
+        st.subheader(f"{selected_status} risks")
     if selected_risks.empty:
         st.info(f"No {selected_status.lower()} risks were found.")
         return
@@ -111,14 +114,14 @@ def _render_risks() -> None:
         return
 
     render_summary_chart(
-        "Risks",
+        "Risks and Mitigation",
         risk_summary,
         "Product",
         "#f3c1c1",
         "No risks found.",
         top_n=20,
         value_column="Risks",
-        details=risk_details,
+        heading_class="risks-mitigation-heading",
     )
     if "Portfolio Component" in risk_summary.columns:
         render_summary_chart(

@@ -123,6 +123,14 @@
         text-align: center;
     }
 
+    .stApp .landing-title { font-size: 1.755rem !important; }
+    .stApp .delivery-card-title { font-size: 1.0125rem !important; }
+    .stApp h3.all-risks-heading,
+    .stApp h3.risks-mitigation-heading,
+    .stApp h3.billability-summary-heading,
+    .stApp h3.skill-categories-heading { font-size: 1.0125rem !important; }
+    .stApp .org-root-name { font-size: 1.1475rem !important; }
+
     .eyebrow {
         color: var(--teal);
         display: block;

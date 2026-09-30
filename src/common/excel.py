@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from io import BytesIO
 from pathlib import Path
-from typing import Sequence
 
 import pandas as pd
 import streamlit as st
@@ -25,10 +24,6 @@ def workbook_token(path: Path) -> tuple[str, int, int]:
     """Cache key that changes when the workbook is replaced or edited."""
     stat = path.stat()
     return str(path), stat.st_mtime_ns, stat.st_size
-
-
-def missing_columns(frame: pd.DataFrame, required: Sequence[str]) -> list[str]:
-    return [column for column in required if column not in frame.columns]
 
 
 def read_excel_frame(path: Path, sheet_name: str | int) -> pd.DataFrame:
@@ -78,10 +73,6 @@ def read_resource_list(file_path: str) -> pd.DataFrame:
         return read_sheet(file_path, RESOURCE_LIST_SHEET)
     except ValueError as error:
         raise ValueError(f"The workbook does not contain a '{RESOURCE_LIST_SHEET}' sheet.") from error
-
-
-def read_first_sheet(file_path: str) -> pd.DataFrame:
-    return read_sheet(file_path, 0)
 
 
 def dataframe_to_excel_bytes(frame: pd.DataFrame, sheet_name: str = "Resources") -> bytes:

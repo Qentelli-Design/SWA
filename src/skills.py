@@ -233,7 +233,7 @@ def _back_to_skills() -> None:
 
 
 def _render_categories(long_df: pd.DataFrame, file_path: str | None) -> None:
-    st.markdown("### Skill categories")
+    st.markdown("<h3 class='skill-categories-heading'>Skill categories</h3>", unsafe_allow_html=True)
     counts = get_category_counts(long_df, file_path)
     columns = st.columns(3)
     for index, row in counts.iterrows():

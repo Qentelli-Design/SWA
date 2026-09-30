@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from common.excel import CACHE_TTL, read_resource_list, require_workbook, workbook_token
+from common.styles import inject_css
 
 
 REQUIRED_COLUMNS = ["Portfolio", "Product", "Resource Name", "Location", "Role", "Vendor"]
@@ -53,14 +54,6 @@ def _governance_mask(frame: pd.DataFrame) -> pd.Series:
 
 def get_governance_members(frame: pd.DataFrame) -> pd.DataFrame:
     return frame[_governance_mask(frame)].copy()
-
-
-def get_products(frame: pd.DataFrame) -> list[str]:
-    products = frame.loc[
-        (~_governance_mask(frame)) & frame["Product"].ne(""),
-        "Product",
-    ]
-    return sorted(products.drop_duplicates().tolist(), key=str.casefold)
 
 
 def get_products_by_portfolio(frame: pd.DataFrame) -> tuple[list[str], list[str]]:
@@ -209,113 +202,7 @@ def _apply_filters(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def _render_styles() -> None:
-    st.markdown(
-        """
-        <style>
-        .team-hero {
-            background: #ffffff;
-            border-bottom: 1px solid #d7e2e2;
-            margin: 0 0 1.15rem;
-            padding: 0.15rem 0 1.1rem;
-        }
-        .team-hero h1 { color: #173c43; font-size: 2.2rem; margin: 0.25rem 0 0.25rem; }
-        .team-hero p { color: #65727d; margin: 0; }
-        .section-kicker, .governance-label, .lead-label {
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-        .team-hero .section-kicker { color: #d96c38; }
-        .section-kicker { color: #087f8c; margin-top: 0.35rem; }
-        .page-kicker { color: #173c43; font-size: 1.35rem; font-weight: 800; letter-spacing: 0.1em; margin: 0 0 0.2rem; text-transform: uppercase; }
-        .page-title { color: #173c43; font-size: 1.5rem !important; font-weight: 700; line-height: 1.1 !important; margin: 0 0 0.65rem; }
-        .section-title { color: #173c43; font-size: 1.35rem; font-weight: 700; margin: 0.1rem 0 0.55rem; }
-        .product-divider { border-top: 1px solid #dfe7e9; margin: 0.75rem 0 0.6rem; }
-        .product-title h2 { color: #173c43; font-size: 1.3rem; margin: 0.1rem 0 0.55rem; }
-        .governance-heading { color: #173c43; font-size: 0.87rem; font-weight: 800; letter-spacing: 0.08em; margin: 0 0 0.35rem; text-align: center; text-transform: uppercase; }
-        .governance-card, .team-card, .lead-card {
-            border-radius: 8px;
-            margin: 0 0 0.35rem;
-            padding: 0.55rem 0.7rem;
-        }
-        .governance-card { background: #f5f8f7; border: 1px solid #c8ddda; border-left: 4px solid #087f8c; border-radius: 8px; margin: 0 0 0.55rem; padding: 0.45rem 0.75rem; }
-        .governance-label { color: #426782; }
-        .governance-people { display: flex; flex-direction: column; gap: 0.3rem; }
-        .governance-person { align-items: baseline; background: #ffffff; border: 1px solid #dfe7e9; border-radius: 6px; display: flex; gap: 0.65rem; padding: 0.35rem 0.5rem; }
-        .governance-name { color: #183342; font-size: 0.95rem; font-weight: 800; }
-        .leadership-ramesh { margin-left: 60px; }
-        .leadership-swetha { margin-left: 120px; }
-        .leadership-kanti { margin-left: 180px; }
-        .leadership-arrow { color: #7b9294; font-size: 0.9rem; font-weight: 800; height: 0.65rem; line-height: 0.65rem; margin-left: 31px; text-align: left; }
-        .leadership-arrow { margin-left: 100px; }
-        .arrow-swetha { margin-left: 150px; }
-        .arrow-kanti { margin-left: 220px; }
-        .governance-head { background: #e7f2f1; border-color: #75bcb4; }
-        .governance-head .governance-name { color: #075f69; }
-        .governance-primary { border-color: #8fcfc8; }
-        .governance-primary { background: #f4f8ef; border-color: #cfdfc1; }
-        .governance-primary .governance-name { color: #5b704c; }
-        .governance-featured { background: #eef1fb; border-color: #bcc7e8; }
-        .governance-featured .governance-name { color: #43558d; }
-        .governance-kanti { background: #f2f7fc; border-color: #cbdced; }
-        .governance-kanti .governance-name { color: #58718a; }
-        .leadership-gap { height: 15px; }
-        .governance-role { color: #65727d; font-size: 0.8rem; }
-        .governance-role { color: #526d7b; font-size: 0.88rem; margin-top: 0.2rem; }
-        .team-heading { border-bottom: 2px solid #dfe7e9; font-size: 0.95rem; font-weight: 700; margin: 0 0 0.5rem; padding-bottom: 0.35rem; }
-        .onsite-heading { color: #a85425; }
-        .offshore-heading { color: #126c76; }
-        .lead-card.lead-onsite { background: #fff2e7; border: 1px solid #efc39f; border-left: 4px solid #d96c38; }
-        .lead-card.lead-offshore { background: #e8f6f4; border: 1px solid #b8deda; border-left: 4px solid #087f8c; }
-        .lead-label { color: #4b5a60; }
-        .lead-name { color: #17212b; font-size: 0.92rem; font-weight: 700; margin-top: 0.05rem; }
-        .lead-role { color: #65727d; font-size: 0.72rem; margin-top: 0.05rem; }
-        .team-card { border: 1px solid #c5d9d7; padding: 0.4rem 0.6rem; }
-        .team-card-name { color: #24343b; font-size: 0.82rem; font-weight: 650; line-height: 1.2; }
-        .team-card.onsite-member { background: #fff8f1; border-color: #efd3bb; }
-        .team-card.offshore-member { background: #f0f8f7; border-color: #c4e0dd; }
-        .team-card.lead-onsite { background: #fff2e7; border-color: #efc39f; }
-        .team-card.lead-offshore { background: #e8f6f4; border-color: #b8deda; }
-        .team-card.rebadge-member { background: #f2ecfb; border-color: #cbb9e8; }
-        .team-card.rebadge-member .team-card-name { color: #5d3c85; }
-        .portfolio-rail { border-radius: 8px; padding: 0.55rem; }
-        .ccc-portfolio-rail { background: #eef8f6; border: 1px solid #c6e4df; }
-        .other-portfolio-rail { background: #f4f0fb; border: 1px solid #ddd1ed; }
-        .product-rail-title { color: #173c43; font-size: 0.9rem; font-weight: 800; letter-spacing: 0.04em; margin: 0.1rem 0 0; padding-bottom: 20px; text-transform: uppercase; }
-        .product-rail [data-testid="stButton"] button { background: #fbfefd; border: 1px solid #bfd0cf; color: #31555b; font-size: 0.7rem; font-weight: 800; min-height: 1.4rem; padding: 0.12rem 0.25rem; white-space: normal; }
-        .product-rail [data-testid="stButton"] button:hover { background: #e8f6f4; border-color: #087f8c; color: #075f69; }
-        .product-rail [data-testid="stButton"] button[kind="primary"] { background: #087f8c; border-color: #087f8c; color: #ffffff; font-weight: 800; }
-        .other-portfolio-rail .product-rail [data-testid="stButton"] button { background: #fcfaff; border-color: #cdbbe5; }
-        .other-portfolio-rail .product-rail [data-testid="stButton"] button[kind="primary"] { background: #8064a9; border-color: #8064a9; color: #ffffff; }
-        .selected-product-panel { background: #f7fbfa; border: 1px solid #d6e7e3; border-left: 4px solid #087f8c; border-radius: 8px; margin: 0 0 0.65rem; padding: 0.65rem 0.8rem; }
-        .selected-product-name { color: #173c43; font-size: 1.15rem; font-weight: 800; margin-bottom: 0.45rem; }
-        .selected-product-stats { display: flex; gap: 0.45rem; }
-        .selected-product-stat { background: #ffffff; border: 1px solid #dfe7e9; border-radius: 6px; color: #48636a; flex: 1; font-size: 0.68rem; padding: 0.35rem 0.45rem; }
-        .selected-product-stat strong { color: #173c43; display: block; font-size: 1rem; line-height: 1.05; }
-        .st-key-product-summary { background: #f5f8f7; border: 1px solid #c8ddda; border-left: 4px solid #087f8c; border-radius: 8px; margin: 0 0 0.7rem; padding: 0.55rem 0.65rem; }
-        .st-key-product-summary [data-testid="stMetric"] { background: #ffffff; border: 1px solid #d6e7e3; border-radius: 7px; padding: 0.45rem 0.55rem; }
-        .st-key-product-summary [data-testid="stMetricLabel"] { color: #48636a; font-size: 0.66rem; font-weight: 700; }
-        .st-key-product-summary [data-testid="stMetricValue"] { color: #173c43; font-size: 1.35rem; font-weight: 800; }
-        .team-box { background: #ffffff; border: 1px solid #dfe7e9; border-radius: 8px; padding: 0.65rem; }
-        .member-heading { color: #65727d; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; margin: 0.55rem 0 0.35rem; text-transform: uppercase; }
-        [data-baseweb="tab-list"] { gap: 0.35rem; overflow-x: auto; padding: 0.25rem 0 0.65rem; scrollbar-width: thin; }
-        [data-baseweb="tab"] { background: #eaf1f0; border: 1px solid #d1dfdd; border-radius: 999px; color: #48636a; font-size: 0.82rem; min-height: 2.2rem; padding: 0.4rem 0.85rem; }
-        [data-baseweb="tab"][aria-selected="true"] { background: #087f8c; border-color: #087f8c; color: #ffffff; }
-        [data-baseweb="tab-highlight"] { background: transparent; }
-        [data-testid="stMetric"] { background: #ffffff; border: 1px solid #dfe7e9; border-radius: 8px; padding: 0.45rem 0.6rem; }
-        [data-testid="stMetricLabel"] { color: #65727d; font-size: 0.68rem; }
-        [data-testid="stMetricValue"] { color: #173c43; font-size: 1.25rem; }
-        [data-testid="stVerticalBlock"] { gap: 0.45rem; }
-        [data-testid="stHorizontalBlock"] { gap: 0.75rem; }
-        [data-testid="stSidebar"] [data-testid="stMultiSelect"] [data-testid="stWidgetLabel"] p { font-size: 0.92rem; margin-bottom: 0.35rem; }
-        [data-testid="stSidebar"] [data-testid="stMultiSelect"] [data-baseweb="select"] > div { min-height: 2.6rem; padding: 0.25rem 0.45rem; }
-        [data-testid="stSidebar"] [role="listbox"] [role="option"] { line-height: 1.45; min-height: 2.2rem; padding: 0.45rem 0.65rem; }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    inject_css("team.css")
 
 def render_team_structure(file_path: str) -> None:
     _render_styles()
