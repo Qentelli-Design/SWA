@@ -24,7 +24,7 @@ SECTIONS: tuple[str, ...] = (
     "BAU Performance",
     "Team Structure",
     "ORG Structure",
-    "Skills",
+    "Offshore Team Skillset",
     "Certifications",
     "Quick Links",
     "Billability",
@@ -44,7 +44,7 @@ _SOURCE_WORKBOOKS = {
     "Billability": CCC_RESOURCES_FILE_PATH,
     "Team Structure": CCC_RESOURCES_FILE_PATH,
     "ORG Structure": ORG_STRUCTURE_FILE_PATH,
-    "Skills": CCC_RESOURCE_SKILLSET_FILE_PATH,
+    "Offshore Team Skillset": CCC_RESOURCE_SKILLSET_FILE_PATH,
     "Quick Links": CCC_RESOURCES_FILE_PATH,
     "BAU Performance": BAU_PERFORMANCE_FILE_PATH,
 }
@@ -52,7 +52,7 @@ _SOURCE_SHEETS = {
     "Billability": ("Resource List",),
     "Team Structure": ("Resource List",),
     "ORG Structure": ("Resource List",),
-    "Skills": ("Resource List", "Skill Categories"),
+    "Offshore Team Skillset": ("Resource List", "Skill Categories"),
     "Quick Links": ("Sharepoint links",),
 }
 

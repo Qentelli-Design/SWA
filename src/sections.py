@@ -177,7 +177,7 @@ _HANDLERS: dict[str, Callable[[], None]] = {
     "Project Delivery Status": _render_project_delivery,
     "Releases/Milestones": _render_releases,
     "Risks": _render_risks,
-    "Skills": _render_skills,
+    "Offshore Team Skillset": _render_skills,
     "Quick Links": _render_quick_links,
     "BAU Performance": _render_bau_performance,
 }

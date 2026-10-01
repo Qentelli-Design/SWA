@@ -198,7 +198,10 @@ def render_releases(file_path: str) -> None:
             with column:
                 frame = products[product_name]
                 with st.container(key=f"release-card-{start + card_index}", border=True):
-                    st.subheader(product_name, anchor=False)
+                    st.markdown(
+                        f"<div class='delivery-card-title'>{escape(product_name)}</div>",
+                        unsafe_allow_html=True,
+                    )
                     status_counts = frame["Status"].map(normalize_status).value_counts()
                     with st.container(horizontal=True, horizontal_alignment="left", gap="small"):
                         for status, color in (("Green", "green"), ("Amber", "orange"), ("Red", "red")):
