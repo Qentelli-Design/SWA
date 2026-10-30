@@ -16,6 +16,7 @@ LEADERSHIP_DISPLAY_ORDER = [
     "Swetha Gundimeda",
     "Kanti Yalavarthy",
 ]
+STATIC_LEADERSHIP_NAMES = {"Siva Rao Kompella S V", "Kanti Yalavarthy"}
 
 
 def load_data(file_path: str) -> pd.DataFrame:
@@ -54,6 +55,10 @@ def _governance_mask(frame: pd.DataFrame) -> pd.Series:
 
 def get_governance_members(frame: pd.DataFrame) -> pd.DataFrame:
     return frame[_governance_mask(frame)].copy()
+
+
+def _person_key(name: str) -> str:
+    return " ".join(sorted(name.casefold().split()))
 
 
 def get_products_by_portfolio(frame: pd.DataFrame) -> tuple[list[str], list[str]]:
@@ -109,10 +114,10 @@ def render_lead_card(resource: pd.Series) -> None:
 
 
 def render_governance_section(governance: pd.DataFrame) -> None:
-    governance_by_name = governance.set_index("Resource Name")
+    governance_names = {_person_key(name) for name in governance["Resource Name"]}
     leadership_rows = []
     for index, name in enumerate(LEADERSHIP_DISPLAY_ORDER):
-        if name != "Siva Rao Kompella S V" and name not in governance_by_name.index:
+        if name not in STATIC_LEADERSHIP_NAMES and _person_key(name) not in governance_names:
             continue
         is_swetha = name == "Swetha Gundimeda"
         person_class = "governance-primary" if is_swetha else "governance-secondary"
