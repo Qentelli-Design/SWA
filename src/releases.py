@@ -15,6 +15,7 @@ from common.delivery import (
     detail_value,
     format_actual_date,
     format_date,
+    is_stale_completed_activity,
     normalize_progress,
     normalize_status,
     render_delivery_styles,
@@ -23,6 +24,20 @@ from common.delivery import (
 from common.excel import CACHE_TTL, read_excel_frame, require_workbook, sheet_names, workbook_token
 
 _RELEASE_COLUMNS = ["Product", "Activities", "Environment", "Actual End Date", "Status", "% Completed"]
+
+
+def _exclude_stale_completed(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        return frame
+    stale_mask = frame.apply(
+        lambda row: is_stale_completed_activity(
+            row.get("% Completed", ""),
+            row.get("Actual End Date", ""),
+            status=row.get("Status", ""),
+        ),
+        axis=1,
+    )
+    return frame.loc[~stale_mask].reset_index(drop=True)
 
 
 def load_release_sheets(file_path: str) -> dict[str, pd.DataFrame]:
@@ -53,8 +68,8 @@ def _load_release_sheets(file_path: str, mtime_ns: int, size: int) -> dict[str, 
             started = releases["% Completed"].map(normalize_progress).gt(0)
         else:
             started = pd.Series(False, index=releases.index)
-        visible = releases[releases["Activities"].ne("") & started]
-        products[sheet_name] = visible.reset_index(drop=True)
+        visible = releases[releases["Activities"].ne("") & started].reset_index(drop=True)
+        products[sheet_name] = _exclude_stale_completed(visible)
     return products
 
 

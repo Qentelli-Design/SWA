@@ -25,6 +25,7 @@ src/common/   Shared Python helpers
 - `excel/CCC_Resources.xlsx`: Billability, Team Structure, ORG Structure, and Quick Links. Quick Links uses the `Sharepoint links` sheet with `Folder or File name` and `Link` columns; each Link cell needs an Excel hyperlink target.
 - `excel/CCC_Resource_Skillset.xlsx`: Skills, with `Resource List` and `Skill Categories` sheets.
 - `excel/Product_Status_Report.xlsx`: Project Delivery Status, Releases/Milestones, and Risks. These views read product worksheets from this workbook.
+  Product Delivery and Releases/Milestones hide activities that are completed and have an Actual End Date older than 20 days.
 
 The dashboard also reads `assets/Qentelli.jpg` and `assets/swa.jpg` when present.
 

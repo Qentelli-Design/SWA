@@ -14,6 +14,7 @@ from common.delivery import (
     detail_value as _detail_value,
     format_actual_date as _format_actual_date,
     format_date as _format_date,
+    is_stale_completed_activity,
     normalize_progress,
     normalize_status,
     render_delivery_styles as _render_styles,
@@ -37,6 +38,20 @@ REQUIRED_COLUMNS = [
 ]
 
 
+def _exclude_stale_completed(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        return frame
+    stale_mask = frame.apply(
+        lambda row: is_stale_completed_activity(
+            row["% Completed"],
+            row["Actual End Date"],
+            status=row["Status"],
+        ),
+        axis=1,
+    )
+    return frame.loc[~stale_mask].reset_index(drop=True)
+
+
 def load_product_sheets(file_path: str) -> dict[str, pd.DataFrame]:
     path = require_workbook(file_path, "Product status workbook not found: {path}")
     resolved, mtime_ns, size = workbook_token(path)
@@ -55,7 +70,8 @@ def _load_product_sheets(file_path: str, mtime_ns: int, size: int) -> dict[str, 
                 frame[column] = ""
         frame = frame[REQUIRED_COLUMNS].dropna(how="all").copy()
         frame["Activities"] = frame["Activities"].fillna("").astype(str).str.strip()
-        products[sheet_name] = frame[frame["Activities"].ne("")].reset_index(drop=True)
+        visible = frame[frame["Activities"].ne("")].reset_index(drop=True)
+        products[sheet_name] = _exclude_stale_completed(visible)
     return products
 
 

@@ -39,6 +39,37 @@ def normalize_progress(value: object) -> float:
     return max(0.0, min(100.0, number))
 
 
+_COMPLETED_STATUS_TOKENS = frozenset({"complete", "completed", "done", "closed"})
+
+
+def is_completed_activity(progress: object, status: object = "") -> bool:
+    status_text = str(status).strip().casefold()
+    if status_text in _COMPLETED_STATUS_TOKENS:
+        return True
+    return normalize_progress(progress) >= 100.0
+
+
+def is_stale_completed_activity(
+    progress: object,
+    completion_date: object,
+    *,
+    status: object = "",
+    grace_days: int = 20,
+) -> bool:
+    if not is_completed_activity(progress, status):
+        return False
+    if pd.isna(completion_date) or str(completion_date).strip() in {"", "NaT", "nan"}:
+        return False
+    value: object = completion_date
+    if isinstance(value, str):
+        value = "".join(character for character in value if unicodedata.category(character) != "Cf").strip()
+    parsed = pd.to_datetime(value, errors="coerce")
+    if pd.isna(parsed):
+        return False
+    cutoff = pd.Timestamp.now().normalize() - pd.Timedelta(days=grace_days)
+    return parsed.normalize() < cutoff
+
+
 def format_date(value: object) -> str:
     if pd.isna(value) or str(value).strip() in {"", "NaT", "nan"}:
         return "Not planned"
