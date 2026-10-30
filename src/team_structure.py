@@ -145,7 +145,7 @@ def render_governance_section(governance: pd.DataFrame) -> None:
             "</div>"
         )
     st.markdown(
-        "<div class='governance-card'><div class='governance-heading'>CCC Leadership</div>"
+        "<div class='governance-card'><div class='governance-heading'>C&amp;C Leadership</div>"
         "<div class='governance-people'>" + "".join(leadership_rows) + "</div></div>"
         "<div class='leadership-gap'></div>",
         unsafe_allow_html=True,
@@ -214,7 +214,7 @@ def render_team_structure(file_path: str) -> None:
     frame = load_data(file_path)
     filtered = _apply_filters(frame)
     st.markdown("<div class='page-kicker'>SWA workforce intelligence</div>", unsafe_allow_html=True)
-    st.markdown("<h1 class='page-title'>CCC Product Delivery Structure</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='page-title'>C&amp;C Product Delivery Structure</h1>", unsafe_allow_html=True)
     st.markdown("<div class='product-divider'></div>", unsafe_allow_html=True)
 
     ccc_products, other_products = get_products_by_portfolio(filtered)
@@ -237,7 +237,7 @@ def render_team_structure(file_path: str) -> None:
     left_rail, center, right_rail = st.columns([1.25, 3.5, 1.25], gap="large")
     with left_rail:
         with st.container(key="ccc-portfolio-rail", border=True):
-            st.markdown("<div class='product-rail-title'>CCC portfolio</div>", unsafe_allow_html=True)
+            st.markdown("<div class='product-rail-title'>C&amp;C portfolio</div>", unsafe_allow_html=True)
             for product in ccc_products:
                 st.button(
                     product,

@@ -180,7 +180,7 @@ def render_org_structure(file_path: str) -> None:
         st.warning(f"No connected reporting relationships were found below {ROOT_NAME}.")
         return
 
-    st.markdown("<h1 class='org-title'>CCC Organization Structure</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='org-title'>C&amp;C Organization Structure</h1>", unsafe_allow_html=True)
     st.markdown("<p class='org-subtitle'>Reporting Hierarchy</p>", unsafe_allow_html=True)
     with st.container(border=True):
         render_org_chart(hierarchy)

@@ -77,7 +77,7 @@ def render_landing() -> None:
         if BRAND_IMAGE_PATH.is_file():
             st.image(str(BRAND_IMAGE_PATH), width=100)
     with title_column:
-        st.markdown('<h1 class="landing-title">SWA Project Status</h1>', unsafe_allow_html=True)
+        st.markdown('<h1 class="landing-title">SWA Engagement - QMO</h1>', unsafe_allow_html=True)
     with logo_right:
         if SWA_IMAGE_PATH.is_file():
             st.image(str(SWA_IMAGE_PATH), width=100)

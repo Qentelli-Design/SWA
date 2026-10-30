@@ -38,7 +38,7 @@ def _run(action: Callable[[], None]) -> None:
 
 def _render_billability() -> None:
     st.markdown(
-        '<div class="hero-copy">Current billability distribution from the CCC resources sheet.</div>',
+        '<div class="hero-copy">Current billability distribution from the C&amp;C resources sheet.</div>',
         unsafe_allow_html=True,
     )
 

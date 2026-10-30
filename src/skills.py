@@ -110,7 +110,7 @@ def _load_resource_skills(file_path: str, mtime_ns: int, size: int) -> pd.DataFr
         raise ValueError("Product/Product Name/Team column not found in resources sheet.")
 
     raw[resource_col] = raw[resource_col].astype(str).str.strip()
-    raw[product_col] = raw[product_col].astype(str).str.strip()
+    raw[product_col] = raw[product_col].astype(str).str.strip().replace({"CCC": "C&C"})
     raw = raw[raw[resource_col].ne("")].reset_index(drop=True)
 
     skill_cols = _detect_skill_columns(raw, exclude={resource_col, product_col})
