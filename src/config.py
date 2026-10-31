@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-APP_TITLE = "SWA Workforce & Project Dashboard"
+APP_TITLE = "SWA Engagement - QMO"
 
 
 def _env_path(env_name: str, default_name: str) -> str:

@@ -10,7 +10,7 @@ from openpyxl import load_workbook
 
 from common.charts import create_activity_line_chart
 from common.excel import read_activity_sheet, require_workbook
-from common.styles import inject_css
+from common.styles import inject_css, inject_css_rules
 
 _EXCLUDED_ACTIVITIES = frozenset({"total"})
 _CHART_ACCENTS = ("#087f8c", "#d96c38", "#087f8c", "#d96c38", "#087f8c", "#d96c38", "#087f8c")
@@ -52,11 +52,6 @@ def calculate_mom(previous: float | None, current: float | None) -> float | None
     return (current - previous) / previous * 100
 
 
-def create_activity_chart(activity_name: str, months: list[str], values: list[float | None], accent: str):
-    """One reusable Plotly line chart for a single activity's monthly trend."""
-    return create_activity_line_chart(activity_name, months, values, accent=accent)
-
-
 def _format_value(value: object) -> str:
     if value is None or pd.isna(value):
         return "N/A"
@@ -90,7 +85,7 @@ def _render_chart_card(
             "</div>",
             unsafe_allow_html=True,
         )
-        figure = create_activity_chart(activity_name, months, values, accent)
+        figure = create_activity_line_chart(activity_name, months, values, accent=accent)
         st.plotly_chart(figure, config={"displayModeBar": False}, key=f"bau-plot-{index}")
 
 
@@ -103,7 +98,7 @@ def _render_product_picker(products: tuple[str, ...]) -> None:
         f".st-key-bau-product-option-{index} {{ --bau-product-hue: {360 * index / len(products):.2f}deg; }}"
         for index in range(len(products))
     )
-    st.markdown(f"<style>{product_color_rules}</style>", unsafe_allow_html=True)
+    inject_css_rules(product_color_rules)
 
     for start in range(0, len(products), 4):
         product_row = products[start : start + 4]

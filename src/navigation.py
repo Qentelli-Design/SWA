@@ -151,4 +151,5 @@ def render_sidebar(selected_section: str) -> None:
             args=(None,),
         )
         st.divider()
-        _render_source_details(selected_section)
+        with st.container(key="source-details"):
+            _render_source_details(selected_section)

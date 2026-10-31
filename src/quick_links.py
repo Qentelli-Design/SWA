@@ -8,7 +8,8 @@ from tempfile import NamedTemporaryFile
 from urllib.parse import urlsplit
 
 import streamlit as st
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
+from openpyxl.worksheet.worksheet import Worksheet
 
 from common.excel import CACHE_TTL, require_workbook, workbook_token
 from common.styles import inject_css
@@ -17,6 +18,33 @@ from config import CCC_RESOURCES_FILE_PATH
 SHEET_NAME = "Sharepoint links"
 REQUIRED_COLUMNS = ("Folder or File name", "Link")
 _QUICK_LINK_FEEDBACK_KEY = "quick_link_feedback"
+
+
+def _is_http_url(url: str) -> bool:
+    parsed_url = urlsplit(url)
+    return parsed_url.scheme.casefold() in {"http", "https"} and bool(parsed_url.netloc)
+
+
+def _find_links_sheet(workbook: Workbook) -> Worksheet:
+    sheet_name = next(
+        (name for name in workbook.sheetnames if name.strip().casefold() == SHEET_NAME.casefold()),
+        None,
+    )
+    if sheet_name is None:
+        raise ValueError(f"The workbook must contain a '{SHEET_NAME}' sheet.")
+    return workbook[sheet_name]
+
+
+def _column_indexes(sheet: Worksheet) -> tuple[int, int]:
+    """Zero-based (name, link) column positions from the header row."""
+    headers = {
+        str(cell.value).strip().casefold(): index
+        for index, cell in enumerate(sheet[1])
+        if cell.value is not None
+    }
+    if any(column.casefold() not in headers for column in REQUIRED_COLUMNS):
+        raise ValueError(f"The '{SHEET_NAME}' sheet must contain columns: {', '.join(REQUIRED_COLUMNS)}.")
+    return headers[REQUIRED_COLUMNS[0].casefold()], headers[REQUIRED_COLUMNS[1].casefold()]
 
 
 def load_quick_links(file_path: str = CCC_RESOURCES_FILE_PATH) -> list[dict[str, str]]:
@@ -31,25 +59,8 @@ def _load_quick_links(file_path: str, mtime_ns: int, size: int) -> list[dict[str
     del mtime_ns, size
     workbook = load_workbook(file_path, read_only=False, data_only=False)
     try:
-        sheet_name = next(
-            (name for name in workbook.sheetnames if name.strip().casefold() == SHEET_NAME.casefold()),
-            None,
-        )
-        if sheet_name is None:
-            raise ValueError(f"The workbook must contain a '{SHEET_NAME}' sheet.")
-
-        sheet = workbook[sheet_name]
-        headers = {
-            str(cell.value).strip().casefold(): index
-            for index, cell in enumerate(sheet[1])
-            if cell.value is not None
-        }
-        missing = [column for column in REQUIRED_COLUMNS if column.casefold() not in headers]
-        if missing:
-            raise ValueError(f"The '{SHEET_NAME}' sheet must contain columns: {', '.join(REQUIRED_COLUMNS)}.")
-
-        name_column = headers[REQUIRED_COLUMNS[0].casefold()]
-        link_column = headers[REQUIRED_COLUMNS[1].casefold()]
+        sheet = _find_links_sheet(workbook)
+        name_column, link_column = _column_indexes(sheet)
         links: list[dict[str, str]] = []
         for row in sheet.iter_rows(min_row=2):
             name_value = row[name_column].value
@@ -67,8 +78,7 @@ def _load_quick_links(file_path: str, mtime_ns: int, size: int) -> list[dict[str
             if not link_name:
                 link_name = name
 
-            parsed_url = urlsplit(url)
-            if parsed_url.scheme.casefold() not in {"http", "https"} or not parsed_url.netloc:
+            if not _is_http_url(url):
                 raise ValueError(f"Quick link '{name}' must have a valid HTTP or HTTPS destination.")
             links.append({"name": name, "link_name": link_name, "url": url})
 
@@ -86,45 +96,25 @@ def add_quick_link(file_path: str, name: str, link_name: str, url: str) -> bool:
         raise ValueError("Enter a folder or file name.")
     if not url:
         raise ValueError("Enter a link URL.")
-
-    parsed_url = urlsplit(url)
-    if parsed_url.scheme.casefold() not in {"http", "https"} or not parsed_url.netloc:
+    if not _is_http_url(url):
         raise ValueError("Enter a valid HTTP or HTTPS URL.")
 
     path = require_workbook(file_path, "Resources workbook not found: {path}")
     workbook = load_workbook(path, read_only=False, data_only=False)
     temporary_path: Path | None = None
     try:
-        sheet_name = next(
-            (sheet for sheet in workbook.sheetnames if sheet.strip().casefold() == SHEET_NAME.casefold()),
-            None,
-        )
-        if sheet_name is None:
-            raise ValueError(f"The workbook must contain a '{SHEET_NAME}' sheet.")
-
-        sheet = workbook[sheet_name]
-        headers = {
-            str(cell.value).strip().casefold(): index
-            for index, cell in enumerate(sheet[1])
-            if cell.value is not None
-        }
-        if any(column.casefold() not in headers for column in REQUIRED_COLUMNS):
-            raise ValueError(
-                f"The '{SHEET_NAME}' sheet must contain columns: {', '.join(REQUIRED_COLUMNS)}."
-            )
-
-        name_column = headers[REQUIRED_COLUMNS[0].casefold()] + 1
-        link_column = headers[REQUIRED_COLUMNS[1].casefold()] + 1
+        sheet = _find_links_sheet(workbook)
+        name_index, link_index = _column_indexes(sheet)
         for row in sheet.iter_rows(min_row=2):
-            existing_name = str(row[name_column - 1].value or "").strip()
-            link_cell = row[link_column - 1]
+            existing_name = str(row[name_index].value or "").strip()
+            link_cell = row[link_index]
             existing_url = link_cell.hyperlink.target if link_cell.hyperlink else str(link_cell.value or "").strip()
             if existing_name.casefold() == name.casefold() and existing_url == url:
                 return False
 
         new_row = sheet.max_row + 1
-        sheet.cell(row=new_row, column=name_column, value=name)
-        link_cell = sheet.cell(row=new_row, column=link_column, value=link_name)
+        sheet.cell(row=new_row, column=name_index + 1, value=name)
+        link_cell = sheet.cell(row=new_row, column=link_index + 1, value=link_name)
         link_cell.hyperlink = url
 
         with NamedTemporaryFile(dir=path.parent, suffix=path.suffix, delete=False) as temporary_file:

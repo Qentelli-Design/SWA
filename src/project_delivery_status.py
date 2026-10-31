@@ -10,15 +10,15 @@ import streamlit as st
 
 from common.delivery import (
     STATUS_ORDER,
-    count_badge as _count_badge,
-    detail_value as _detail_value,
-    format_actual_date as _format_actual_date,
-    format_date as _format_date,
-    is_stale_completed_activity,
+    count_badge,
+    detail_value,
+    exclude_stale_completed,
+    format_actual_date,
+    format_date,
     normalize_progress,
     normalize_status,
-    render_delivery_styles as _render_styles,
-    status_badge as _status_badge,
+    render_delivery_styles,
+    status_badge,
 )
 from common.excel import CACHE_TTL, read_excel_frame, require_workbook, sheet_names, workbook_token
 
@@ -36,20 +36,6 @@ REQUIRED_COLUMNS = [
     "Mitigation Plan",
     "Comments",
 ]
-
-
-def _exclude_stale_completed(frame: pd.DataFrame) -> pd.DataFrame:
-    if frame.empty:
-        return frame
-    stale_mask = frame.apply(
-        lambda row: is_stale_completed_activity(
-            row["% Completed"],
-            row["Actual End Date"],
-            status=row["Status"],
-        ),
-        axis=1,
-    )
-    return frame.loc[~stale_mask].reset_index(drop=True)
 
 
 def load_product_sheets(file_path: str) -> dict[str, pd.DataFrame]:
@@ -71,7 +57,7 @@ def _load_product_sheets(file_path: str, mtime_ns: int, size: int) -> dict[str, 
         frame = frame[REQUIRED_COLUMNS].dropna(how="all").copy()
         frame["Activities"] = frame["Activities"].fillna("").astype(str).str.strip()
         visible = frame[frame["Activities"].ne("")].reset_index(drop=True)
-        products[sheet_name] = _exclude_stale_completed(visible)
+        products[sheet_name] = exclude_stale_completed(visible)
     return products
 
 
@@ -131,28 +117,28 @@ def show_product_details(product_name: str, frame: pd.DataFrame) -> None:
                 )
                 st.progress(progress / 100)
             with owner_column:
-                st.markdown(_detail_value("Owner", str(row["Owner"]).strip() or "Unassigned"), unsafe_allow_html=True)
+                st.markdown(detail_value("Owner", str(row["Owner"]).strip() or "Unassigned"), unsafe_allow_html=True)
             with priority_column:
-                st.markdown(_detail_value("Priority", _priority(row["Priority"]) or "NA"), unsafe_allow_html=True)
+                st.markdown(detail_value("Priority", _priority(row["Priority"]) or "NA"), unsafe_allow_html=True)
             with date_column:
                 st.markdown(
                     "<div class='project-date-value'>"
-                    + _detail_value("Planned start date", _format_date(row["Planned Start Date"]))
+                    + detail_value("Planned start date", format_date(row["Planned Start Date"]))
                     + "</div>",
                     unsafe_allow_html=True,
                 )
                 st.markdown(
                     "<div class='project-date-value'>"
-                    + _detail_value("Actual end date", _format_actual_date(row["Actual End Date"]))
+                    + detail_value("Actual end date", format_actual_date(row["Actual End Date"]))
                     + "</div>",
                     unsafe_allow_html=True,
                 )
             with status_column:
-                st.markdown(_detail_value("Status", _status_badge(status), html=True), unsafe_allow_html=True)
+                st.markdown(detail_value("Status", status_badge(status), html=True), unsafe_allow_html=True)
 
 
 def render_project_delivery_status(file_path: str) -> None:
-    _render_styles()
+    render_delivery_styles()
     products = load_product_sheets(file_path)
     st.markdown("<h1 class='delivery-title'>SWA Product Delivery Health</h1>", unsafe_allow_html=True)
 
@@ -170,13 +156,13 @@ def render_project_delivery_status(file_path: str) -> None:
                     )
                     st.markdown(
                         "<div class='count-badge-row'>"
-                        + "".join(_count_badge(status, int(summary[status])) for status in STATUS_ORDER)
+                        + "".join(count_badge(status, int(summary[status])) for status in STATUS_ORDER)
                         + "</div>",
                         unsafe_allow_html=True,
                     )
                     st.markdown(
                         "<div class='status-row overall-row'><span class='status-label'>Overall</span>"
-                        f"{_status_badge(str(summary['Overall']))}</div>",
+                        f"{status_badge(str(summary['Overall']))}</div>",
                         unsafe_allow_html=True,
                     )
                     if st.button("View details", key=f"delivery_details_{product_name}", width="stretch"):

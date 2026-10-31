@@ -10,6 +10,7 @@ import streamlit as st
 
 RESOURCE_LIST_SHEET = "Resource List"
 CACHE_TTL = "30m"
+DATA_ERRORS = (FileNotFoundError, ValueError)
 
 
 def require_workbook(file_path: str, message: str) -> Path:

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from html import escape
 from pathlib import Path
-import unicodedata
 
 import pandas as pd
 import streamlit as st
@@ -13,31 +12,18 @@ from common.delivery import (
     STATUS_ORDER,
     count_badge,
     detail_value,
+    exclude_stale_completed,
     format_actual_date,
     format_date,
-    is_stale_completed_activity,
     normalize_progress,
     normalize_status,
     render_delivery_styles,
     status_badge,
 )
 from common.excel import CACHE_TTL, read_excel_frame, require_workbook, sheet_names, workbook_token
+from common.text import strip_format_characters
 
 _RELEASE_COLUMNS = ["Product", "Activities", "Environment", "Actual End Date", "Status", "% Completed"]
-
-
-def _exclude_stale_completed(frame: pd.DataFrame) -> pd.DataFrame:
-    if frame.empty:
-        return frame
-    stale_mask = frame.apply(
-        lambda row: is_stale_completed_activity(
-            row.get("% Completed", ""),
-            row.get("Actual End Date", ""),
-            status=row.get("Status", ""),
-        ),
-        axis=1,
-    )
-    return frame.loc[~stale_mask].reset_index(drop=True)
 
 
 def load_release_sheets(file_path: str) -> dict[str, pd.DataFrame]:
@@ -69,7 +55,7 @@ def _load_release_sheets(file_path: str, mtime_ns: int, size: int) -> dict[str, 
         else:
             started = pd.Series(False, index=releases.index)
         visible = releases[releases["Activities"].ne("") & started].reset_index(drop=True)
-        products[sheet_name] = _exclude_stale_completed(visible)
+        products[sheet_name] = exclude_stale_completed(visible)
     return products
 
 
@@ -97,7 +83,7 @@ def _release_download_frame(frame: pd.DataFrame) -> pd.DataFrame:
 
 def _format_actual_end_date(value: object) -> str:
     if isinstance(value, str):
-        cleaned = "".join(character for character in value if unicodedata.category(character) != "Cf").strip()
+        cleaned = strip_format_characters(value)
         if not cleaned:
             return "Not available"
         formatted = format_actual_date(cleaned)

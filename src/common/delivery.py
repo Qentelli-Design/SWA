@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from html import escape
-import unicodedata
 
 import pandas as pd
 
 from common.styles import inject_css
+from common.text import strip_format_characters
 
 STATUS_ORDER = ("Green", "Amber", "Red")
 
@@ -62,7 +62,7 @@ def is_stale_completed_activity(
         return False
     value: object = completion_date
     if isinstance(value, str):
-        value = "".join(character for character in value if unicodedata.category(character) != "Cf").strip()
+        value = strip_format_characters(value)
     parsed = pd.to_datetime(value, errors="coerce")
     if pd.isna(parsed):
         return False
@@ -70,11 +70,26 @@ def is_stale_completed_activity(
     return parsed.normalize() < cutoff
 
 
+def exclude_stale_completed(frame: pd.DataFrame) -> pd.DataFrame:
+    """Drop completed activities whose actual end date is older than the grace period."""
+    if frame.empty:
+        return frame
+    stale_mask = frame.apply(
+        lambda row: is_stale_completed_activity(
+            row.get("% Completed", ""),
+            row.get("Actual End Date", ""),
+            status=row.get("Status", ""),
+        ),
+        axis=1,
+    )
+    return frame.loc[~stale_mask].reset_index(drop=True)
+
+
 def format_date(value: object) -> str:
     if pd.isna(value) or str(value).strip() in {"", "NaT", "nan"}:
         return "Not planned"
     if isinstance(value, str):
-        value = "".join(character for character in value if unicodedata.category(character) != "Cf").strip()
+        value = strip_format_characters(value)
     parsed = pd.to_datetime(value, errors="coerce")
     return "Not planned" if pd.isna(parsed) else parsed.strftime("%d %b %y")
 

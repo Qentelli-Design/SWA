@@ -249,6 +249,18 @@
         color: #17212b;
     }
 
+    .st-key-source-details p,
+    .st-key-source-details [data-testid="stCaptionContainer"] {
+        font-size: 0.72rem !important;
+        line-height: 1.35;
+    }
+
+    .st-key-source-details {
+        flex: 0 0 auto !important;
+        gap: 0.45rem !important;
+        height: auto !important;
+    }
+
     .st-key-navigation-grid [data-testid="stButton"] button {
         border: 1px solid transparent;
         color: #17212b;

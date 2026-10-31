@@ -1,4 +1,4 @@
-# SWA Workforce & Project Dashboard
+# SWA Engagement - QMO
 
 A Streamlit dashboard for workforce, skills, project delivery, releases, risks, and SharePoint links.
 
@@ -19,6 +19,20 @@ excel/        Source workbooks
 src/          Page and application Python modules
 src/common/   Shared Python helpers
 ```
+
+### Module structure
+
+Each page keeps data logic separate from UI code, and `sections.py` only routes sections to views.
+
+| Area | Data / logic | UI |
+|---|---|---|
+| Team Structure | `team_data.py` | `team_structure.py` |
+| ORG Structure | `org_data.py` | `org_structure.py` |
+| Offshore Team Skillset | `skills_data.py` | `skills.py` |
+| Risks / Billability | `data_loader.py` | `risks.py`, `billability.py` |
+| Project Delivery, Releases, BAU, Quick Links | in the view module | `project_delivery_status.py`, `releases.py`, `bau_performance.py`, `quick_links.py` |
+
+Shared helpers live in `src/common/`: `excel.py` (cached workbook reads), `delivery.py` (status formatting and the stale-activity filter), `charts.py`, `styles.py` (CSS injection) and `text.py` (name matching and text cleanup).
 
 ## Workbooks
 
