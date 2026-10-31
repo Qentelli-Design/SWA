@@ -91,15 +91,17 @@ def get_leadership_names(governance: pd.DataFrame) -> list[str]:
     ]
 
 
-def build_team_metrics(product_frame: pd.DataFrame) -> list[tuple[str, int]]:
-    """Headline counts for the summary tiles."""
-    product_team = get_product_team(product_frame)
+def build_team_metrics(frame: pd.DataFrame) -> list[tuple[str, int]]:
+    """Headline counts for the summary tiles. ``frame`` holds everyone, governance included."""
+    governance = get_governance_members(frame)
+    product_team = get_product_team(frame)
     onsite = product_team[product_team["Location Normalized"].eq("Onsite")]
     offshore = product_team[product_team["Location Normalized"].eq("Offshore")]
     return [
-        ("Total team", len(product_team)),
+        ("Total team", len(product_team) + len(governance)),
         ("Onsite", len(onsite)),
         ("Offshore", len(offshore)),
+        ("Governance", len(governance)),
         ("Onsite leads", int(onsite["Role"].str.casefold().str.contains("lead onsite").sum())),
         ("Offshore leads", int(offshore["Role"].str.casefold().str.contains("lead offshore").sum())),
         ("Consultants", int(product_team["Is Consultant"].sum())),

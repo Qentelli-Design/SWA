@@ -60,23 +60,26 @@
 .st-key-product-summary [data-testid="stColumn"]:nth-child(1) { --tile-edge: #12263f; }
 .st-key-product-summary [data-testid="stColumn"]:nth-child(2) { --tile-edge: #1e4e8c; }
 .st-key-product-summary [data-testid="stColumn"]:nth-child(3) { --tile-edge: #0f766e; }
-.st-key-product-summary [data-testid="stColumn"]:nth-child(4) { --tile-edge: #5b86b3; }
-.st-key-product-summary [data-testid="stColumn"]:nth-child(5) { --tile-edge: #5fb8ae; }
-.st-key-product-summary [data-testid="stColumn"]:nth-child(6) { --tile-edge: #b8892b; }
+.st-key-product-summary [data-testid="stColumn"]:nth-child(4) { --tile-edge: #6b5b95; }
+.st-key-product-summary [data-testid="stColumn"]:nth-child(5) { --tile-edge: #5b86b3; }
+.st-key-product-summary [data-testid="stColumn"]:nth-child(6) { --tile-edge: #5fb8ae; }
+.st-key-product-summary [data-testid="stColumn"]:nth-child(7) { --tile-edge: #b8892b; }
 .st-key-product-summary [data-testid="stMetricLabel"] p,
 .st-key-product-summary [data-testid="stMetricLabel"] [data-testid="stMarkdownContainer"],
 .st-key-product-summary [data-testid="stMetricValue"] p,
 .st-key-product-summary [data-testid="stMetricValue"] [data-testid="stMarkdownContainer"] {
     overflow: visible !important;
+    overflow-wrap: normal !important;
     text-overflow: clip !important;
     white-space: normal !important;
+    word-break: normal !important;
 }
 .st-key-product-summary [data-testid="stMetric"] > div { padding: 0.1rem 0.2rem; }
 .st-key-product-summary [data-testid="stMetricLabel"] {
     color: var(--t-muted);
     font-size: 0.62rem;
     font-weight: 600;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
     line-height: 1.2;
     text-transform: uppercase;
 }

@@ -21,9 +21,13 @@ def render_summary_chart(
     top_n: int = 10,
     value_column: str = "Resources",
     heading_class: str | None = None,
+    show_heading: bool = True,
+    corporate: bool = False,
 ) -> None:
     """Draw a horizontal bar chart from an aggregated summary frame."""
-    if heading_class:
+    if not show_heading:
+        pass
+    elif heading_class:
         st.markdown(
             f"<h3 class='{escape(heading_class)}'>{escape(title)}</h3>",
             unsafe_allow_html=True,
@@ -58,6 +62,36 @@ def render_summary_chart(
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
     )
+    if corporate:
+        font = dict(family="DM Sans, Arial, sans-serif", color="#1f2d3d", size=13)
+        chart.update_traces(
+            marker=dict(color=accent, line=dict(color="#0b2540", width=1)),
+            textfont=dict(size=13, color="#0b2540"),
+            width=0.62,
+        )
+        chart.update_layout(
+            font=font,
+            margin=dict(l=10, r=50, t=10, b=10),
+            xaxis=dict(
+                title=dict(text=value_column, font=dict(size=12, color="#5b6b7b")),
+                showgrid=True,
+                gridcolor="#e6ebf0",
+                zeroline=False,
+                showline=True,
+                linecolor="#cfd8e0",
+                tickfont=dict(size=12, color="#5b6b7b"),
+            ),
+            yaxis=dict(
+                showline=True,
+                linecolor="#cfd8e0",
+                tickfont=dict(size=13, color="#1f2d3d"),
+            ),
+        )
+        if visible[value_column].max() <= 5:
+            chart.update_xaxes(dtick=1)
+        with st.container(border=True, key="summary-chart-card"):
+            st.plotly_chart(chart, config={"displayModeBar": False})
+        return
     st.plotly_chart(chart, config={"displayModeBar": False})
 
 

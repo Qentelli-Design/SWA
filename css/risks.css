@@ -1,0 +1,26 @@
+        .rk-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.7rem; margin: 0.4rem 0 1rem; }
+        .rk-tile { background: #ffffff; border: 1px solid #d5dee6; border-left: 4px solid #1f4e79; border-radius: 8px; padding: 0.55rem 0.8rem; box-shadow: 0 1px 4px rgba(15, 37, 64, 0.07); }
+        .rk-tile:nth-child(2) { border-left-color: #b45309; }
+        .rk-tile:nth-child(3) { border-left-color: #2f7d4f; }
+        .rk-tile:nth-child(4) { border-left-color: #b42318; }
+        .rk-tile-value { color: #0b2540; font-size: 1.5rem; font-weight: 800; line-height: 1.1; }
+        .rk-tile-label { color: #5b6b7b; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
+        .rk-section { color: #0b2540; font-size: 1.05rem; font-weight: 700; margin: 1.1rem 0 0.5rem; padding-bottom: 0.3rem; border-bottom: 2px solid #d5dee6; }
+
+        .rk-card { background: #ffffff; border: 1px solid #d5dee6; border-left: 4px solid #b42318; border-radius: 8px; padding: 0.75rem 0.95rem; margin-bottom: 0.7rem; box-shadow: 0 1px 4px rgba(15, 37, 64, 0.07); }
+        .rk-card.rk-closed { border-left-color: #2f7d4f; }
+        .rk-card.rk-progress { border-left-color: #b45309; }
+        .rk-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .rk-num { background: #e8eef4; color: #1f4e79; border-radius: 6px; font-size: 0.75rem; font-weight: 800; padding: 0.15rem 0.45rem; }
+        .rk-product { color: #0b2540; font-size: 0.95rem; font-weight: 700; }
+        .rk-status { margin-left: auto; background: #f4f7fa; border: 1px solid #cfd8e0; border-radius: 999px; color: #3f4f5f; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.6rem; }
+        .rk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+        @media (max-width: 760px) { .rk-grid { grid-template-columns: 1fr; } }
+        .rk-col { border-radius: 6px; padding: 0.5rem 0.7rem; font-size: 0.88rem; line-height: 1.4; color: #1f2d3d; }
+        .rk-col.rk-risk { background: #fdf3f2; border: 1px solid #f3d4d1; }
+        .rk-col.rk-mit { background: #f1f7f3; border: 1px solid #d3e6da; }
+        .rk-col-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.2rem; }
+        .rk-risk .rk-col-label { color: #b42318; }
+        .rk-mit .rk-col-label { color: #2f7d4f; }
+        .rk-none { color: #8a9598; font-style: italic; }

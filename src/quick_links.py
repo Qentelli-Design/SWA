@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from html import escape
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from urllib.parse import urlsplit
@@ -148,14 +149,27 @@ def render_quick_links(file_path: str = CCC_RESOURCES_FILE_PATH) -> None:
             if not links:
                 st.info(f"No quick links found in the '{SHEET_NAME}' sheet.")
             else:
-                for index, link in enumerate(links):
-                    with st.container(key=f"quick-link-row-{index}", border=True):
-                        name_column, action_column = st.columns([3, 1], vertical_alignment="center")
-                        with name_column:
-                            st.markdown(f"**{link['name']}**")
-                            st.caption(link["link_name"])
-                        with action_column:
-                            st.link_button("Open link", link["url"], width="stretch")
+                st.markdown(
+                    '<div class="hero-copy">Shortcuts to shared folders and files.</div>',
+                    unsafe_allow_html=True,
+                )
+                for start in range(0, len(links), 2):
+                    for column, index in zip(st.columns(2), range(start, start + 2)):
+                        if index >= len(links):
+                            break
+                        link = links[index]
+                        host = urlsplit(link["url"]).netloc
+                        label = link["link_name"]
+                        show_label = label.casefold() not in {link["name"].casefold(), host.casefold()}
+                        sub_html = f"<div class='ql-sub'>{escape(label)}</div>" if show_label else ""
+                        with column, st.container(key=f"quick-link-row-{index}", border=True):
+                            st.markdown(
+                                f"<div class='ql-card'><span class='ql-num'>{index + 1:02d}</span>"
+                                f"<div class='ql-text'><div class='ql-name'>{escape(link['name'])}</div>"
+                                f"{sub_html}</div></div>",
+                                unsafe_allow_html=True,
+                            )
+                            st.link_button("Open link ↗", link["url"], width="stretch")
 
         with add_tab:
             with st.container(key="quick-links-form"):

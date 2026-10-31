@@ -1,12 +1,26 @@
-        [class*="st-key-quick-links-view"] [data-testid="stTabs"] [role="tablist"] { background: #f2f6f5; border: 1px solid #e0e9e8; border-radius: 8px; gap: 0.45rem; padding: 0.35rem; }
-        [class*="st-key-quick-links-view"] [data-testid="stTab"] { background: #e9f0ef; border: 1px solid #d6e1df; border-radius: 6px; color: #53676b; padding: 0.55rem 0.9rem; }
-        [class*="st-key-quick-links-view"] [data-testid="stTab"][aria-selected="true"] { background: #dcecea; border-color: #a9cbc6; color: #173c43; }
+        [class*="st-key-quick-links-view"] [data-testid="stTabs"] [role="tablist"] { background: #f4f7fa; border: 1px solid #d5dee6; border-radius: 8px; gap: 0.4rem; padding: 0.3rem; }
+        [class*="st-key-quick-links-view"] [data-testid="stTab"] { background: transparent; border: 1px solid transparent; border-radius: 6px; color: #5b6b7b; padding: 0.5rem 1rem; }
+        [class*="st-key-quick-links-view"] [data-testid="stTab"][aria-selected="true"] { background: #1f4e79; border-color: #1f4e79; color: #ffffff; }
+        [class*="st-key-quick-links-view"] [data-testid="stTab"][aria-selected="true"] p { color: #ffffff; }
         [class*="st-key-quick-links-view"] [data-testid="stTab"] [data-testid="stMarkdownContainer"] p { font-weight: 700; margin: 0; }
         [class*="st-key-quick-links-view"] [data-testid="stTab"] .react-aria-SelectionIndicator { display: none; }
-        [class*="st-key-quick-links-view"] [data-testid="stTab"]:hover:not([aria-selected="true"]) { background: #ffffff; border-color: #b9d1ce; }
+        [class*="st-key-quick-links-view"] [data-testid="stTab"]:hover:not([aria-selected="true"]) { background: #e8eef4; border-color: #cfd8e0; }
 
-        [class*="st-key-quick-link-row-"] { background: #ffffff; border: 1px solid #e1e8e8; border-left: 3px solid #83b9b1; border-radius: 7px; padding: 0.2rem 0.45rem; }
-        [class*="st-key-quick-link-row-"] [data-testid="stLinkButton"] a { background: #f1f7f6; border: 1px solid #c9ddda; border-radius: 6px; color: #075f69; }
-        [class*="st-key-quick-link-row-"] [data-testid="stLinkButton"] a:hover { background: #e4f1ef; border-color: #83b9b1; color: #064e56; }
+        [class*="st-key-quick-link-row-"] { background: #ffffff; border: 1px solid #d5dee6; border-left: 4px solid #1f4e79; border-radius: 8px; padding: 0.6rem 0.8rem; box-shadow: 0 1px 4px rgba(15, 37, 64, 0.07); transition: box-shadow 0.15s ease, transform 0.15s ease; }
+        [class*="st-key-quick-link-row-"]:hover { box-shadow: 0 6px 16px rgba(15, 37, 64, 0.14); transform: translateY(-2px); }
+        [class*="st-key-quick-link-row-"] .ql-card { display: flex; gap: 0.75rem; align-items: flex-start; }
+        [class*="st-key-quick-link-row-"] .ql-num { flex: 0 0 auto; background: #e8eef4; color: #1f4e79; border-radius: 6px; font-size: 0.8rem; font-weight: 800; padding: 0.25rem 0.5rem; }
+        [class*="st-key-quick-link-row-"] .ql-name { color: #0b2540; font-size: 1rem; font-weight: 700; line-height: 1.25; }
+        [class*="st-key-quick-link-row-"] .ql-sub { color: #3f4f5f; font-size: 0.85rem; margin-top: 0.15rem; }
+        [class*="st-key-quick-link-row-"] .ql-host { color: #8a9598; font-size: 0.72rem; margin-top: 0.2rem; word-break: break-all; }
+        [class*="st-key-quick-link-row-"] [data-testid="stLinkButton"] a { background: #1f4e79; border: 1px solid #1f4e79; border-radius: 6px; color: #ffffff; font-weight: 600; }
+        [class*="st-key-quick-link-row-"] [data-testid="stLinkButton"] a p { color: #ffffff; }
+        [class*="st-key-quick-link-row-"] [data-testid="stLinkButton"] a:hover { background: #163a5c; border-color: #163a5c; color: #ffffff; }
 
-        [class*="st-key-quick-links-form"] { background: #ffffff; border: 1px solid #e1e8e8; border-radius: 8px; padding: 1rem 1.1rem; }
+        [class*="st-key-quick-links-form"] [data-testid="stFormSubmitButton"] button { background: #1f4e79; border: 1px solid #1f4e79; border-radius: 6px; color: #ffffff; font-weight: 600; padding: 0.4rem 1.4rem; }
+        [class*="st-key-quick-links-form"] [data-testid="stFormSubmitButton"] button p { color: #ffffff; }
+        [class*="st-key-quick-links-form"] [data-testid="stFormSubmitButton"] button:hover { background: #163a5c; border-color: #163a5c; color: #ffffff; }
+        [class*="st-key-quick-links-form"] [data-testid="stFormSubmitButton"] button:focus:not(:active) { border-color: #163a5c; box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.25); color: #ffffff; }
+        [class*="st-key-quick-links-form"] input:focus { border-color: #1f4e79; box-shadow: 0 0 0 1px #1f4e79; }
+
+        [class*="st-key-quick-links-form"] { background: #ffffff; border: 1px solid #d5dee6; border-top: 4px solid #1f4e79; border-radius: 8px; padding: 1rem 1.1rem; box-shadow: 0 1px 4px rgba(15, 37, 64, 0.07); }

@@ -10,7 +10,7 @@ from data_loader import build_billability_summary
 
 def render_billability(file_path: str) -> None:
     st.markdown(
-        '<div class="hero-copy">Current billability distribution from the C&amp;C resources sheet.</div>',
+        '<div class="hero-copy">Team billability status at a glance.</div>',
         unsafe_allow_html=True,
     )
     summary, _ = build_billability_summary(file_path)
@@ -18,9 +18,10 @@ def render_billability(file_path: str) -> None:
         "Billability",
         summary,
         "Billability",
-        "#087f8c",
+        "#1f4e79",
         "No billability data was found.",
         top_n=30,
         value_column="Resources",
-        heading_class="billability-summary-heading",
+        show_heading=False,
+        corporate=True,
     )

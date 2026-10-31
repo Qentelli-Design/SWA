@@ -89,8 +89,8 @@ def render_governance_section(governance: pd.DataFrame) -> None:
     )
 
 
-def render_product_summary(product_frame: pd.DataFrame) -> None:
-    metrics = build_team_metrics(product_frame)
+def render_product_summary(frame: pd.DataFrame) -> None:
+    metrics = build_team_metrics(frame)
     with st.container(key="product-summary", border=True):
         metric_columns = st.columns(len(metrics), gap="small")
         for column, (label, value) in zip(metric_columns, metrics):
@@ -199,7 +199,7 @@ def render_team_structure(file_path: str) -> None:
         st.info("No product teams found.")
         return
     product_team = get_product_team(frame)
-    render_product_summary(product_team)
+    render_product_summary(frame)
     render_governance_section(get_governance_members(frame))
     st.markdown("<div class='product-divider'></div>", unsafe_allow_html=True)
     _render_product_browser(product_team, primary_products, other_products)

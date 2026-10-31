@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from html import escape
 from pathlib import Path
 
 import streamlit as st
@@ -114,29 +115,26 @@ def render_section_header(selected_section: str) -> None:
 
 
 def _render_source_details(selected_section: str) -> None:
-    st.caption("Data source")
-    if selected_section == "Certifications":
-        st.write("No data source configured for this tab.")
-        return
-
     workbook_path = _SOURCE_WORKBOOKS.get(selected_section)
-    if workbook_path is None:
-        st.write("No data source configured for this tab.")
-        return
-
-    if selected_section in _PRODUCT_WORKBOOK_SECTIONS:
-        try:
-            worksheets = sheet_names(workbook_path)
-        except (FileNotFoundError, OSError, ValueError):
-            worksheets = ("Unable to read worksheet names",)
+    if selected_section == "Certifications" or workbook_path is None:
+        body = '<div class="source-empty">No data source for this tab</div>'
     else:
-        worksheets = _SOURCE_SHEETS[selected_section]
-    worksheet_label = "All sheets" if len(worksheets) > 1 else worksheets[0]
-
-    st.markdown("**Excel workbook**")
-    st.write(Path(workbook_path).name)
-    st.markdown("**Worksheet(s)**")
-    st.write(worksheet_label)
+        if selected_section in _PRODUCT_WORKBOOK_SECTIONS:
+            try:
+                worksheets = sheet_names(workbook_path)
+            except (FileNotFoundError, OSError, ValueError):
+                worksheets = ("Unable to read worksheet names",)
+        else:
+            worksheets = _SOURCE_SHEETS[selected_section]
+        worksheet_label = "All sheets" if len(worksheets) > 1 else worksheets[0]
+        body = (
+            f'<div class="source-file">{escape(Path(workbook_path).name)}</div>'
+            f'<div class="source-sheet">{escape(worksheet_label)}</div>'
+        )
+    st.markdown(
+        f'<div class="source-card"><div class="source-label">Data source</div>{body}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def render_sidebar(selected_section: str) -> None:
