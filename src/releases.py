@@ -170,28 +170,29 @@ def render_releases(file_path: str) -> None:
         return
 
     all_releases = _combine_releases(products)
-    view_column, download_column = st.columns([2, 1], vertical_alignment="center")
-    with view_column:
-        if st.button(
-            f"View all releases ({len(all_releases)})",
-            key="view_all_releases",
-            width="stretch",
-            type="primary",
-            wrap=True,
-        ):
-            show_all_releases(all_releases)
-    with download_column:
-        st.download_button(
-            "Download releases (.csv)",
-            data=_release_download_frame(all_releases).to_csv(index=False).encode("utf-8"),
-            file_name="all_releases.csv",
-            mime="text/csv",
-            key="download_all_releases",
-            width="stretch",
-            on_click="ignore",
-            wrap=True,
-            disabled=all_releases.empty,
-        )
+    with st.container(key="release-actions"):
+        view_column, download_column = st.columns([2, 1], vertical_alignment="center")
+        with view_column:
+            if st.button(
+                f"View all releases ({len(all_releases)})",
+                key="view_all_releases",
+                width="stretch",
+                type="primary",
+                wrap=True,
+            ):
+                show_all_releases(all_releases)
+        with download_column:
+            st.download_button(
+                "Download releases (.csv)",
+                data=_release_download_frame(all_releases).to_csv(index=False).encode("utf-8"),
+                file_name="all_releases.csv",
+                mime="text/csv",
+                key="download_all_releases",
+                width="stretch",
+                on_click="ignore",
+                wrap=True,
+                disabled=all_releases.empty,
+            )
 
     for start in range(0, len(product_names), 3):
         columns = st.columns(3, gap="medium")
@@ -204,9 +205,12 @@ def render_releases(file_path: str) -> None:
                         unsafe_allow_html=True,
                     )
                     status_counts = frame["Status"].map(normalize_status).value_counts()
-                    with st.container(horizontal=True, horizontal_alignment="left", gap="small"):
-                        for status, color in (("Green", "green"), ("Amber", "orange"), ("Red", "red")):
-                            st.badge(str(int(status_counts.get(status, 0))), color=color, help=status)
+                    st.markdown(
+                        "<div class='count-badge-row'>"
+                        + "".join(count_badge(status, int(status_counts.get(status, 0))) for status in STATUS_ORDER)
+                        + "</div>",
+                        unsafe_allow_html=True,
+                    )
                     if st.button(
                         "View details",
                         key=f"release_details_{product_name}",

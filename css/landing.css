@@ -1,0 +1,69 @@
+        .st-key-landing-hero {
+            background: linear-gradient(120deg, #0b2540 0%, #1f4e79 62%, #087f8c 100%);
+            border-radius: 14px;
+            box-shadow: 0 10px 28px rgba(11, 37, 64, 0.22);
+            overflow: hidden;
+            padding: 1.1rem 1.6rem;
+            position: relative;
+        }
+        .st-key-landing-hero::before {
+            background: radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.14), transparent 45%),
+                        radial-gradient(circle at 10% 110%, rgba(117, 211, 204, 0.22), transparent 40%);
+            content: "";
+            inset: 0;
+            pointer-events: none;
+            position: absolute;
+        }
+        .st-key-landing-hero [data-testid="stImage"] img { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); padding: 6px; }
+        .st-key-landing-hero .landing-title { color: #ffffff; padding: 0; text-align: center; }
+        .st-key-landing-hero .landing-title::after { background: #75d3cc; }
+        .st-key-navigation-grid [data-testid="stButton"] button {
+            background: #ffffff;
+            border: 1px solid #d5dee6;
+            border-left: 5px solid var(--group-color, #1f4e79);
+            border-radius: 10px;
+            box-shadow: 0 1px 5px rgba(15, 37, 64, 0.07);
+            justify-content: center;
+            min-height: 64px;
+            padding: 0.5rem 0.7rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+        .st-key-navigation-grid [data-testid="stButton"] button p { color: #0b2540; font-size: 0.95rem !important; overflow-wrap: normal; word-break: normal; }
+        .st-key-navigation-grid [data-testid="stButton"] button [data-testid="stIconMaterial"] {
+            color: var(--group-color, #1f4e79);
+            font-size: 1.25rem;
+        }
+        .st-key-navigation-grid [data-testid="stButton"] button:hover {
+            background: var(--group-tint, #e8eef4);
+            border-color: var(--group-color, #1f4e79);
+            box-shadow: 0 8px 18px rgba(15, 37, 64, 0.16);
+            transform: translateY(-3px);
+        }
+        .st-key-nav-group-0 { --group-color: #1f4e79; --group-tint: #e6eef6; }
+        .st-key-nav-group-1 { --group-color: #087f8c; --group-tint: #e2f3f4; }
+        .st-key-nav-group-2 { --group-color: #6b5b95; --group-tint: #eeeaf6; }
+
+        .stApp:has(.st-key-landing-hero) { background: linear-gradient(180deg, #f4f7f6 0%, #e6edf4 100%); }
+        .st-key-landing-hero::after { background: linear-gradient(90deg, #1f4e79, #087f8c, #6b5b95); bottom: 0; content: ""; height: 4px; left: 0; position: absolute; right: 0; }
+        .st-key-landing-hero .landing-title { letter-spacing: 0.02em; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
+
+        .st-key-navigation-grid [data-testid="stButton"] button { position: relative; }
+        .st-key-navigation-grid [data-testid="stButton"] button::after {
+            content: "\2192" / "";
+            color: var(--group-color, #1f4e79);
+            font-size: 1.1rem;
+            font-weight: 800;
+            opacity: 0;
+            position: absolute;
+            right: 0.9rem;
+            transform: translateX(-6px);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        .st-key-navigation-grid [data-testid="stButton"] button:hover::after { opacity: 1; transform: translateX(0); }
+
+        @keyframes landing-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        [class*="st-key-navigation-item-"] { animation: landing-rise 0.5s ease both; }
+        .st-key-navigation-item-0, .st-key-navigation-item-1 { animation-delay: 0.05s; }
+        .st-key-navigation-item-2, .st-key-navigation-item-3, .st-key-navigation-item-4, .st-key-navigation-item-5 { animation-delay: 0.15s; }
+        .st-key-navigation-item-6, .st-key-navigation-item-7, .st-key-navigation-item-8, .st-key-navigation-item-9 { animation-delay: 0.25s; }
+        .st-key-landing-hero { animation: landing-rise 0.5s ease both; }

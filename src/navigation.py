@@ -8,6 +8,7 @@ from pathlib import Path
 import streamlit as st
 
 from common.excel import sheet_names
+from common.styles import inject_css
 from config import (
     BRAND_IMAGE_PATH,
     CCC_RESOURCE_SKILLSET_FILE_PATH,
@@ -72,40 +73,52 @@ def current_section() -> str | None:
     return section if isinstance(section, str) else None
 
 
+_NAV_ROWS: tuple[tuple[str, ...], ...] = (SECTIONS[:2], SECTIONS[2:6], SECTIONS[6:])
+_SECTION_ICONS = {
+    "Project Delivery Status": ":material/rocket_launch:",
+    "Releases/Milestones": ":material/event_available:",
+    "Risks": ":material/warning:",
+    "BAU Performance": ":material/trending_up:",
+    "Team Structure": ":material/groups:",
+    "ORG Structure": ":material/account_tree:",
+    "Offshore Team Skillset": ":material/psychology:",
+    "Certifications": ":material/workspace_premium:",
+    "Quick Links": ":material/link:",
+    "Billability": ":material/payments:",
+}
+
+
 def render_landing() -> None:
-    logo_left, title_column, logo_right = st.columns([1, 4, 1], vertical_alignment="center")
-    with logo_left:
-        if BRAND_IMAGE_PATH.is_file():
-            st.image(str(BRAND_IMAGE_PATH), width=100)
-    with title_column:
-        st.markdown('<h1 class="landing-title">SWA Engagement - QMO</h1>', unsafe_allow_html=True)
-    with logo_right:
-        if SWA_IMAGE_PATH.is_file():
-            st.image(str(SWA_IMAGE_PATH), width=100)
+    inject_css("landing.css")
+    with st.container(key="landing-hero"):
+        logo_left, title_column, logo_right = st.columns([1, 4, 1], vertical_alignment="center")
+        with logo_left:
+            if BRAND_IMAGE_PATH.is_file():
+                st.image(str(BRAND_IMAGE_PATH), width=100)
+        with title_column:
+            st.markdown('<h1 class="landing-title">SWA Engagement - QMO</h1>', unsafe_allow_html=True)
+        with logo_right:
+            if SWA_IMAGE_PATH.is_file():
+                st.image(str(SWA_IMAGE_PATH), width=100)
 
     st.space(10)
     with st.container(key="navigation-grid"):
-        section_rows = (SECTIONS[:2], SECTIONS[2:6], SECTIONS[6:])
-        section_index = 0
-        for row_index, row_sections in enumerate(section_rows):
+        for row_index, row_sections in enumerate(_NAV_ROWS):
             if row_index:
                 st.space(10)
-            grid_columns = st.columns(4)
-            if row_index == 0:
-                row_columns = grid_columns[1:3]
-            else:
-                row_columns = grid_columns[: len(row_sections)]
-            for column, section in zip(row_columns, row_sections):
-                with column:
-                    with st.container(key=f"navigation-item-{section_index}"):
+            with st.container(key=f"nav-group-{row_index}"):
+                grid_columns = st.columns(4)
+                row_columns = grid_columns[1:3] if row_index == 0 else grid_columns[: len(row_sections)]
+                for column, section in zip(row_columns, row_sections):
+                    with column, st.container(key=f"navigation-item-{SECTIONS.index(section)}"):
                         st.button(
                             section,
                             key=f"navigation_{section}",
+                            icon=_SECTION_ICONS[section],
                             width="stretch",
                             on_click=select_section,
                             args=(section,),
                         )
-                section_index += 1
 
 
 def render_section_header(selected_section: str) -> None:

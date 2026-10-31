@@ -267,30 +267,9 @@
         font-weight: 700;
     }
 
-    [class*="st-key-release-card-"] {
-        background: #ffffff;
-        border: 1px solid #cfe3df;
-        border-top: 3px solid #087f8c;
-        border-radius: 6px;
-    }
-
-    .st-key-navigation-item-0 [data-testid="stButton"] button { background: #d9eee9; border-color: #9bcfc5; border-left: 4px solid #5b9e94; }
-    .st-key-navigation-item-1 [data-testid="stButton"] button { background: #dce9f5; border-color: #a8c6df; border-left: 4px solid #6e91b5; }
-    .st-key-navigation-item-2 [data-testid="stButton"] button { background: #f7e6d5; border-color: #e4c19d; border-left: 4px solid #bd8959; }
-    .st-key-navigation-item-3 [data-testid="stButton"] button { background: #f3e5e5; border-color: #dfbaba; border-left: 4px solid #b97979; }
-    .st-key-navigation-item-4 [data-testid="stButton"] button { background: #e8e1f3; border-color: #c6b6df; border-left: 4px solid #8973ac; }
-    .st-key-navigation-item-5 [data-testid="stButton"] button { background: #e8f0d9; border-color: #c1d59e; border-left: 4px solid #819e68; }
-    .st-key-navigation-item-6 [data-testid="stButton"] button { background: #e4edf1; border-color: #b9cfd8; border-left: 4px solid #6d93a3; }
-    .st-key-navigation-item-7 [data-testid="stButton"] button { background: #f5e8c8; border-color: #dfc98e; border-left: 4px solid #b49a58; }
-    .st-key-navigation-item-8 [data-testid="stButton"] button { background: #e7eaf2; border-color: #bfc8da; border-left: 4px solid #7887a5; }
-    .st-key-navigation-item-9 [data-testid="stButton"] button { background: #eaf5f4; border-color: #b5d8d2; border-left: 4px solid #087f8c; }
-
     .st-key-navigation-grid [data-testid="stButton"] button:hover {
-        filter: brightness(0.96);
-        border-color: #087f8c;
+        border-color: #1f4e79;
     }
-
-    .st-key-navigation-item-9 [data-testid="stButton"] button:hover { background: #e0efed; border-color: #087f8c; }
 
     .source-card {
         border: 1px solid #d5dee6;

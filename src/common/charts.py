@@ -61,6 +61,7 @@ def render_summary_chart(
         showlegend=False,
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="DM Sans, Arial, sans-serif"),
     )
     if corporate:
         font = dict(family="DM Sans, Arial, sans-serif", color="#1f2d3d", size=13)
