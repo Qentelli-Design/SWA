@@ -49,7 +49,7 @@ def _consultant_tag(resource: pd.Series) -> str:
         f"Joined: {resource['Qentelli DOJ']}" if resource["Qentelli DOJ"] else "",
     ]
     tooltip = escape(" | ".join(detail for detail in details if detail))
-    return f"<span class='consultant-tag' title='{tooltip}'>Consultant</span>"
+    return f"<span class='consultant-tag' title='{tooltip}'>Q Consultant</span>"
 
 
 def render_team_member_card(resource: pd.Series) -> None:

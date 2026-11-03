@@ -18,7 +18,7 @@ REQUIRED_COLUMNS = [
     "Reporting Manager",
 ]
 DETAIL_COLUMNS = ["Qentelli ID", "Qentelli Mail ID", "Qentelli DOJ", "Qentelli Designation"]
-CONSULTANT_DESIGNATION = "consultant"
+CONSULTANT_DESIGNATION = "q consultant"
 PRIMARY_PORTFOLIO = "CCC"
 LEADERSHIP_ROOT = "Siva Rao Kompella S V"
 LEADERSHIP_DISPLAY_ORDER = [
@@ -142,7 +142,7 @@ def build_team_metrics(frame: pd.DataFrame) -> list[tuple[str, int]]:
         ("Governance", len(governance)),
         ("Onsite leads", int(onsite["Role"].str.casefold().str.contains("lead onsite").sum())),
         ("Offshore leads", int(offshore["Role"].str.casefold().str.contains("lead offshore").sum())),
-        ("Consultants", int(product_team["Is Consultant"].sum())),
+        ("Q Consultants", int(product_team["Is Consultant"].sum())),
     ]
 
 
