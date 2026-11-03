@@ -77,20 +77,20 @@
 .st-key-product-summary [data-testid="stMetric"] > div { padding: 0.1rem 0.2rem; }
 .st-key-product-summary [data-testid="stMetricLabel"] {
     color: var(--t-muted);
-    font-size: 0.62rem;
-    font-weight: 600;
+    font-size: 0.5rem;
+    font-weight: 800;
     letter-spacing: 0.02em;
     line-height: 1.2;
     text-transform: uppercase;
 }
-.st-key-product-summary [data-testid="stMetricLabel"] p { font-size: 0.62rem; line-height: 1.2; }
+.st-key-product-summary [data-testid="stMetricLabel"] p { font-size: 0.5rem; font-weight: 800; line-height: 1.2; }
 .st-key-product-summary [data-testid="stMetricValue"] {
     color: var(--t-navy);
     font-size: 1.2rem;
-    font-weight: 700;
+    font-weight: 400;
     line-height: 1.2;
 }
-.st-key-product-summary [data-testid="stMetricValue"] p { font-size: 1.2rem; line-height: 1.2; }
+.st-key-product-summary [data-testid="stMetricValue"] p { font-size: 1.2rem; font-weight: 400; line-height: 1.2; }
 
 /* Leadership */
 .governance-card {
@@ -244,16 +244,16 @@
 .team-card { align-items: center; background: #ffffff; border: 1px solid var(--t-line); border-left: 3px solid #cbd5e1; display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; justify-content: space-between; padding: 0.42rem 0.7rem; }
 .lead-heading { align-items: center; display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; justify-content: space-between; }
 .consultant-tag {
-    background: #fdf3dc;
-    border: 1px solid #ecd49a;
+    background: transparent;
+    border: 1px solid #cbd5e1;
     border-radius: 999px;
-    color: #8a6420;
+    color: var(--t-muted);
     cursor: help;
     flex: 0 0 auto;
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    padding: 0.08rem 0.5rem;
+    font-size: 0.5rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 0.04rem 0.4rem;
     text-transform: uppercase;
 }
 .team-card-name { color: var(--t-ink); font-size: 0.83rem; font-weight: 500; line-height: 1.25; }
