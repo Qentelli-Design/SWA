@@ -12,7 +12,7 @@ from team_data import (
     build_team_metrics,
     count_by_location,
     get_governance_members,
-    get_leadership_names,
+    get_leadership_hierarchy,
     get_product_team,
     get_products_by_portfolio,
     load_data,
@@ -75,15 +75,26 @@ def render_lead_card(resource: pd.Series) -> None:
     )
 
 
+def _leadership_node_html(node: dict, depth: int = 1) -> str:
+    tier = min(depth, 4)
+    children = "".join(_leadership_node_html(child, depth + 1) for child in node["children"])
+    child_group = (
+        f"<div class='leader-connector'></div><div class='leader-peer-row'>{children}</div>"
+        if children
+        else ""
+    )
+    return (
+        "<div class='leader-branch'>"
+        f"<div class='leader-bar leader-tier-{tier}'>{escape(node['name'])}</div>"
+        f"{child_group}</div>"
+    )
+
+
 def render_governance_section(governance: pd.DataFrame) -> None:
-    levels = []
-    for index, name in enumerate(get_leadership_names(governance)):
-        if index:
-            levels.append("<div class='leader-connector'></div>")
-        levels.append(f"<div class='leader-bar leader-tier-{index + 1}'>{escape(name)}</div>")
+    hierarchy = get_leadership_hierarchy(governance)
     st.markdown(
         "<div class='governance-card'><div class='governance-heading'>C&amp;C Leadership</div>"
-        "<div class='leader-stack'>" + "".join(levels) + "</div></div>"
+        "<div class='leader-tree'>" + _leadership_node_html(hierarchy) + "</div></div>"
         "<div class='leadership-gap'></div>",
         unsafe_allow_html=True,
     )

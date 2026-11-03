@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 import streamlit as st
 
+from attrition import render_attrition
 from bau_performance import render_bau_performance
 from billability import render_billability
 from common.excel import DATA_ERRORS
@@ -43,6 +44,7 @@ _HANDLERS: dict[str, Callable[[], None]] = {
     "Billability": _guarded(render_billability, CCC_RESOURCES_FILE_PATH),
     "Team Structure": _guarded(render_team_structure, CCC_RESOURCES_FILE_PATH),
     "ORG Structure": _guarded(render_org_structure, ORG_STRUCTURE_FILE_PATH),
+    "Attrition": _guarded(render_attrition, CCC_RESOURCES_FILE_PATH),
     "Project Delivery Status": _guarded(render_project_delivery_status, PROJECT_DELIVERY_STATUS_FILE_PATH),
     "Releases/Milestones": _guarded(render_releases, PROJECT_DELIVERY_STATUS_FILE_PATH),
     # The risks view reports its own load errors and leaves rendering errors unhandled.

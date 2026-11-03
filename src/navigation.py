@@ -26,6 +26,7 @@ SECTIONS: tuple[str, ...] = (
     "BAU Performance",
     "Team Structure",
     "ORG Structure",
+    "Attrition",
     "Offshore Team Skillset",
     "Certifications",
     "Quick Links",
@@ -44,6 +45,7 @@ _SOURCE_WORKBOOKS = {
     "Releases/Milestones": PROJECT_DELIVERY_STATUS_FILE_PATH,
     "Risks": PROJECT_DELIVERY_STATUS_FILE_PATH,
     "Billability": CCC_RESOURCES_FILE_PATH,
+    "Attrition": CCC_RESOURCES_FILE_PATH,
     "Team Structure": CCC_RESOURCES_FILE_PATH,
     "ORG Structure": ORG_STRUCTURE_FILE_PATH,
     "Offshore Team Skillset": CCC_RESOURCE_SKILLSET_FILE_PATH,
@@ -54,6 +56,7 @@ _SOURCE_SHEETS = {
     "Billability": ("Resource List",),
     "Team Structure": ("Resource List",),
     "ORG Structure": ("Resource List",),
+    "Attrition": ("Resource List",),
     "Offshore Team Skillset": ("Resource List", "Skill Categories"),
     "Quick Links": ("Sharepoint links",),
 }
@@ -81,6 +84,7 @@ _SECTION_ICONS = {
     "BAU Performance": ":material/trending_up:",
     "Team Structure": ":material/groups:",
     "ORG Structure": ":material/account_tree:",
+    "Attrition": ":material/person_remove:",
     "Offshore Team Skillset": ":material/psychology:",
     "Certifications": ":material/workspace_premium:",
     "Quick Links": ":material/link:",
@@ -107,7 +111,7 @@ def render_landing() -> None:
             if row_index:
                 st.space(10)
             with st.container(key=f"nav-group-{row_index}"):
-                grid_columns = st.columns(4)
+                grid_columns = st.columns(max(4, len(row_sections)))
                 row_columns = grid_columns[1:3] if row_index == 0 else grid_columns[: len(row_sections)]
                 for column, section in zip(row_columns, row_sections):
                     with column, st.container(key=f"navigation-item-{SECTIONS.index(section)}"):

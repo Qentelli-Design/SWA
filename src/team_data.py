@@ -8,17 +8,29 @@ import streamlit as st
 from common.excel import CACHE_TTL, read_resource_list, require_workbook, workbook_token
 from common.text import person_key
 
-REQUIRED_COLUMNS = ["Portfolio", "Product", "Resource Name", "Location", "Role", "Vendor"]
+REQUIRED_COLUMNS = [
+    "Portfolio",
+    "Product",
+    "Resource Name",
+    "Location",
+    "Role",
+    "Vendor",
+    "Reporting Manager",
+]
 DETAIL_COLUMNS = ["Qentelli ID", "Qentelli Mail ID", "Qentelli DOJ", "Qentelli Designation"]
 CONSULTANT_DESIGNATION = "consultant"
 PRIMARY_PORTFOLIO = "CCC"
+LEADERSHIP_ROOT = "Siva Rao Kompella S V"
 LEADERSHIP_DISPLAY_ORDER = [
-    "Siva Rao Kompella S V",
     "B Ramesh",
+    "Madhav Patibandla",
     "Swetha Gundimeda",
     "Kanti Yalavarthy",
 ]
-STATIC_LEADERSHIP_NAMES = {"Siva Rao Kompella S V", "Kanti Yalavarthy"}
+LEADERSHIP_DISPLAY_NAMES = {
+    person_key("Gundimeda Swetha"): "Swetha Gundimeda",
+    person_key("Yalavarthy Kanti Krishna"): "Kanti Yalavarthy",
+}
 
 
 def load_data(file_path: str) -> pd.DataFrame:
@@ -81,14 +93,40 @@ def get_products_by_portfolio(frame: pd.DataFrame) -> tuple[list[str], list[str]
     )
 
 
-def get_leadership_names(governance: pd.DataFrame) -> list[str]:
-    """Leaders to display, in reporting order: fixed leaders plus those present as governance rows."""
-    governance_names = {person_key(name) for name in governance["Resource Name"]}
-    return [
-        name
-        for name in LEADERSHIP_DISPLAY_ORDER
-        if name in STATIC_LEADERSHIP_NAMES or person_key(name) in governance_names
-    ]
+def get_leadership_hierarchy(governance: pd.DataFrame) -> dict:
+    """Build the C&C leadership tree from governance members' reporting managers."""
+    names: dict[str, str] = {}
+    reports: dict[str, list[str]] = {}
+    for _, row in governance.iterrows():
+        name = row["Resource Name"]
+        manager = row["Reporting Manager"]
+        person = person_key(name)
+        manager_key = person_key(manager)
+        if not person or not manager_key:
+            continue
+        names.setdefault(person, LEADERSHIP_DISPLAY_NAMES.get(person, name))
+        reports.setdefault(manager_key, [])
+        if person not in reports[manager_key]:
+            reports[manager_key].append(person)
+
+    display_order = {person_key(name): index for index, name in enumerate(LEADERSHIP_DISPLAY_ORDER)}
+
+    def build_node(key: str, name: str, visited: frozenset[str]) -> dict:
+        children = sorted(
+            reports.get(key, []),
+            key=lambda child: (display_order.get(child, len(display_order)), names[child].casefold()),
+        )
+        return {
+            "name": name,
+            "children": [
+                build_node(child, names[child], visited | {key})
+                for child in children
+                if child not in visited and child != key
+            ],
+        }
+
+    root_key = person_key(LEADERSHIP_ROOT)
+    return build_node(root_key, LEADERSHIP_ROOT, frozenset({root_key}))
 
 
 def build_team_metrics(frame: pd.DataFrame) -> list[tuple[str, int]]:
