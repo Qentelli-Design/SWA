@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+from functools import lru_cache
 from html import escape
 from pathlib import Path
 
@@ -62,6 +64,24 @@ _SOURCE_SHEETS = {
 }
 
 
+_IMAGE_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
+
+
+@lru_cache(maxsize=4)
+def _image_data_uri(path: str) -> str:
+    image_path = Path(path)
+    mime = _IMAGE_MIME.get(image_path.suffix.lower(), "image/png")
+    return f"data:{mime};base64,{base64.b64encode(image_path.read_bytes()).decode()}"
+
+
+def _render_logo(path: Path, width: int) -> None:
+    """Plain <img> instead of st.image, which adds a fullscreen toolbar that blanks the page."""
+    st.markdown(
+        f'<img class="brand-logo" src="{_image_data_uri(str(path))}" width="{width}" alt="">',
+        unsafe_allow_html=True,
+    )
+
+
 def ensure_session_state() -> None:
     st.session_state.setdefault(_SECTION_STATE, None)
 
@@ -98,12 +118,12 @@ def render_landing() -> None:
         logo_left, title_column, logo_right = st.columns([1, 4, 1], vertical_alignment="center")
         with logo_left:
             if BRAND_IMAGE_PATH.is_file():
-                st.image(str(BRAND_IMAGE_PATH), width=100)
+                _render_logo(BRAND_IMAGE_PATH, 100)
         with title_column:
             st.markdown('<h1 class="landing-title">SWA Engagement - QMO</h1>', unsafe_allow_html=True)
         with logo_right:
             if SWA_IMAGE_PATH.is_file():
-                st.image(str(SWA_IMAGE_PATH), width=100)
+                _render_logo(SWA_IMAGE_PATH, 100)
 
     st.space(10)
     with st.container(key="navigation-grid"):
@@ -157,7 +177,7 @@ def _render_source_details(selected_section: str) -> None:
 def render_sidebar(selected_section: str) -> None:
     with st.sidebar:
         if BRAND_IMAGE_PATH.is_file():
-            st.image(str(BRAND_IMAGE_PATH), width=90)
+            _render_logo(BRAND_IMAGE_PATH, 90)
         st.button(
             "Dashboard overview",
             width="stretch",

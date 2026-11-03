@@ -14,7 +14,7 @@
             pointer-events: none;
             position: absolute;
         }
-        .st-key-landing-hero [data-testid="stImage"] img { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); padding: 6px; }
+        .st-key-landing-hero .brand-logo { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); display: block; padding: 6px; }
         .st-key-landing-hero .landing-title { color: #ffffff; padding: 0; text-align: center; }
         .st-key-landing-hero .landing-title::after { background: #75d3cc; }
         .st-key-navigation-grid [data-testid="stButton"] button {
