@@ -191,12 +191,13 @@ def _render_product_browser(
 
     selected_product = st.session_state[_SELECTED_PRODUCT_KEY]
     product_frame = product_team[product_team["Product"].eq(selected_product)].copy()
-    if group == PORTFOLIO_GROUPS[2]:
-        center, rail = st.columns([3.5, 1.25], gap="large")
-        rail_key = "other-portfolio-rail"
-    else:
-        rail, center = st.columns([1.25, 3.5], gap="large")
-        rail_key = "ccc-portfolio-rail"
+    rail, center = st.columns([1.25, 3.5], gap="large")
+    rail_keys = {
+        PORTFOLIO_GROUPS[0]: "ccc-portfolio-rail",
+        PORTFOLIO_GROUPS[1]: "concourse-portfolio-rail",
+        PORTFOLIO_GROUPS[2]: "other-portfolio-rail",
+    }
+    rail_key = rail_keys[group]
     with rail:
         _render_product_rail(rail_key, escape(group), "team_product_button_", products, selected_product)
     with center:
@@ -210,7 +211,7 @@ def render_team_structure(file_path: str) -> None:
     st.markdown("<h1 class='page-title'>Product Delivery Structure</h1>", unsafe_allow_html=True)
     st.markdown("<div class='product-divider'></div>", unsafe_allow_html=True)
 
-    selected_group = st.session_state.get(_SELECTED_PORTFOLIO_KEY)
+    selected_group = st.session_state.setdefault(_SELECTED_PORTFOLIO_KEY, PORTFOLIO_GROUPS[0])
     for column, group in zip(st.columns(len(PORTFOLIO_GROUPS), gap="medium"), PORTFOLIO_GROUPS):
         with column:
             st.button(

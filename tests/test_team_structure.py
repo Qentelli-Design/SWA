@@ -78,16 +78,39 @@ class PortfolioBrowserTests(unittest.TestCase):
     def markdown_text(self):
         return "\n".join(item.value for item in self.app.markdown)
 
+    def test_product_rail_precedes_details_for_each_portfolio(self):
+        rail_keys = ("ccc-portfolio-rail", "concourse-portfolio-rail", "other-portfolio-rail")
+        for group, rail_key in zip(PORTFOLIO_GROUPS, rail_keys):
+            with self.subTest(group=group):
+                self.click(f"team_portfolio_{group}")
+                self.assertTrue(any(
+                    container.proto.id.endswith(f"-{rail_key}")
+                    for container in self.app.get("flex_container")
+                ))
+                columns = self.app.get("column")
+                rail_index = next(
+                    index for index, column in enumerate(columns)
+                    if any(
+                        item.type == "button" and item.key.startswith("team_product_button_")
+                        for item in column
+                    )
+                )
+                self.assertTrue(any(
+                    item.type == "markdown" and "selected-product-panel" in item.value
+                    for item in columns[rail_index + 1]
+                ))
+
     def test_portfolio_navigation_and_scoped_product_details(self):
         self.assertEqual(
-            [button.label for button in self.app.button],
+            [button.label for button in self.app.button][:3],
             list(PORTFOLIO_GROUPS),
         )
-        self.assertEqual(len(self.app.metric), 0)
-
-        self.click("team_portfolio_C&C")
+        self.assertEqual(self.app.button(key="team_portfolio_C&C").proto.type, "primary")
+        self.assertEqual(self.app.button(key="team_portfolio_Concourse").proto.type, "secondary")
+        self.assertFalse(any("Select a portfolio" in item.value for item in self.app.info))
         self.assertEqual(self.app.metric[0].value, "6")
         self.assertIn("C&amp;C Leadership", self.markdown_text())
+        self.assertIn("CCC Person", self.markdown_text())
         self.assertEqual(
             [button.label for button in self.app.button][3:], ["Alpha", "Shared"]
         )
@@ -96,6 +119,8 @@ class PortfolioBrowserTests(unittest.TestCase):
         self.assertNotIn("Concourse Shared", self.markdown_text())
 
         self.click("team_portfolio_Concourse")
+        self.assertEqual(self.app.button(key="team_portfolio_Concourse").proto.type, "primary")
+        self.assertEqual(self.app.button(key="team_portfolio_C&C").proto.type, "secondary")
         self.assertEqual(
             [button.label for button in self.app.button][3:], ["Shared", "Team 2"]
         )
@@ -104,6 +129,7 @@ class PortfolioBrowserTests(unittest.TestCase):
         self.assertEqual(self.app.metric[0].value, "6")
 
         self.click("team_portfolio_C360 and Other Products")
+        self.assertEqual(self.app.button(key="team_portfolio_C360 and Other Products").proto.type, "primary")
         self.assertEqual(
             [button.label for button in self.app.button][3:], ["Beta", "C360"]
         )
