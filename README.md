@@ -43,6 +43,15 @@ Shared helpers live in `src/common/`: `excel.py` (cached workbook reads), `deliv
 
 The dashboard also reads `assets/Qentelli.jpg` and `assets/swa.jpg` when present.
 
+Team Structure groups product resources by the `Resource List` sheet's `Portfolio` column:
+`CCC` appears under C&C, `Concourse` under Concourse, and all other values under C360 and
+Other Products. Product details contain only rows from the selected group; the summary and
+C&C leadership remain overall.
+
+ORG Structure shows the reporting tree below Siva Rao Kompella S V. Reporting relationships
+that cannot be connected to that tree are shown separately under their listed managers, and
+resources with no reporting manager are listed separately. Rebadge resources remain excluded.
+
 Set `CCC_RESOURCES_FILE_PATH`, `ORG_STRUCTURE_FILE_PATH`, `PROJECT_DELIVERY_STATUS_FILE_PATH`, or `CCC_RESOURCE_SKILLSET_FILE_PATH` to override the default workbook paths. Set `SWA_BRAND_IMAGE_PATH` or `SWA_IMAGE_PATH` to override image paths.
 
 ## Deploy

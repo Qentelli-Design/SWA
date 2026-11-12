@@ -20,6 +20,8 @@ REQUIRED_COLUMNS = [
 DETAIL_COLUMNS = ["Qentelli ID", "Qentelli Mail ID", "Qentelli DOJ", "Qentelli Designation"]
 CONSULTANT_DESIGNATION = "q consultant"
 PRIMARY_PORTFOLIO = "CCC"
+CONCOURSE_PORTFOLIO = "Concourse"
+PORTFOLIO_GROUPS = ("C&C", "Concourse", "C360 and Other Products")
 LEADERSHIP_ROOT = "Siva Rao Kompella S V"
 LEADERSHIP_DISPLAY_ORDER = [
     "B Ramesh",
@@ -81,16 +83,26 @@ def get_product_team(frame: pd.DataFrame) -> pd.DataFrame:
     return frame[~governance_mask(frame)].copy()
 
 
-def get_products_by_portfolio(frame: pd.DataFrame) -> tuple[list[str], list[str]]:
-    product_frame = frame[
-        (~governance_mask(frame)) & frame["Product"].ne("")
-    ].drop_duplicates("Product")
-    primary_products = product_frame.loc[product_frame["Portfolio"].eq(PRIMARY_PORTFOLIO), "Product"]
-    other_products = product_frame.loc[~product_frame["Portfolio"].eq(PRIMARY_PORTFOLIO), "Product"]
-    return (
-        sorted(primary_products.tolist(), key=str.casefold),
-        sorted(other_products.tolist(), key=str.casefold),
-    )
+def get_portfolio_team(frame: pd.DataFrame, group: str) -> pd.DataFrame:
+    """Return non-governance resource rows belonging to the selected portfolio group."""
+    team = get_product_team(frame)
+    portfolios = team["Portfolio"].str.strip().str.casefold()
+    primary = portfolios.eq(PRIMARY_PORTFOLIO.casefold())
+    concourse = portfolios.eq(CONCOURSE_PORTFOLIO.casefold())
+    if group == PORTFOLIO_GROUPS[0]:
+        mask = primary
+    elif group == PORTFOLIO_GROUPS[1]:
+        mask = concourse
+    elif group == PORTFOLIO_GROUPS[2]:
+        mask = ~(primary | concourse)
+    else:
+        raise ValueError(f"Unknown portfolio group: {group}")
+    return team[mask].copy()
+
+
+def get_products(frame: pd.DataFrame) -> list[str]:
+    products = frame.loc[frame["Product"].ne(""), "Product"].unique()
+    return sorted(products.tolist(), key=str.casefold)
 
 
 def get_leadership_hierarchy(governance: pd.DataFrame) -> dict:

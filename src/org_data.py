@@ -122,3 +122,32 @@ def build_hierarchy(frame: pd.DataFrame) -> dict:
         return node
 
     return make_node(root_key, ROOT_NAME, "", frozenset())
+
+
+def unconnected_relationships(frame: pd.DataFrame, hierarchy: dict) -> pd.DataFrame:
+    """Find reporting relationships not rendered in the root leader's tree."""
+    represented: set[tuple[str, str, str]] = set()
+
+    def collect(node: dict) -> None:
+        for child in node["children"]:
+            represented.add((node["key"], child["key"], child["product"]))
+            collect(child)
+
+    collect(hierarchy)
+    missing = [
+        (row["Manager Key"], row["Person Key"], row["Product"]) not in represented
+        for _, row in frame.iterrows()
+    ]
+    return frame.loc[missing].drop_duplicates(subset=["Manager Key", "Person Key", "Product"]).copy()
+
+
+def unassigned_resources(frame: pd.DataFrame) -> pd.DataFrame:
+    """Find resources without a reporting manager, excluding the root and rebadges."""
+    names = frame["Resource Name"]
+    missing = (
+        names.ne("")
+        & frame["Reporting Manager"].eq("")
+        & ~frame["Vendor"].str.casefold().eq("rebadge")
+        & names.map(person_key).ne(person_key(ROOT_NAME))
+    )
+    return frame.loc[missing].drop_duplicates(subset=["Resource Name", "Product"]).copy()

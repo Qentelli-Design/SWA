@@ -9,15 +9,17 @@ import streamlit as st
 
 from common.styles import inject_css
 from team_data import (
+    PORTFOLIO_GROUPS,
     build_team_metrics,
     count_by_location,
     get_governance_members,
     get_leadership_hierarchy,
-    get_product_team,
-    get_products_by_portfolio,
+    get_portfolio_team,
+    get_products,
     load_data,
 )
 
+_SELECTED_PORTFOLIO_KEY = "selected_team_portfolio"
 _SELECTED_PRODUCT_KEY = "selected_team_product"
 
 
@@ -129,6 +131,11 @@ def _select_team_product(product: str) -> None:
     st.session_state[_SELECTED_PRODUCT_KEY] = product
 
 
+def _select_team_portfolio(group: str) -> None:
+    st.session_state[_SELECTED_PORTFOLIO_KEY] = group
+    st.session_state.pop(_SELECTED_PRODUCT_KEY, None)
+
+
 def _render_product_rail(
     container_key: str,
     title_html: str,
@@ -176,41 +183,57 @@ def _render_product_detail(selected_product: str, product_frame: pd.DataFrame) -
 
 @st.fragment
 def _render_product_browser(
-    product_team: pd.DataFrame, primary_products: list[str], other_products: list[str]
+    product_team: pd.DataFrame, products: list[str], group: str
 ) -> None:
     """Product picker and detail. A fragment, so choosing a product only reruns this block."""
-    products = primary_products + other_products
     if _SELECTED_PRODUCT_KEY not in st.session_state or st.session_state[_SELECTED_PRODUCT_KEY] not in products:
         st.session_state[_SELECTED_PRODUCT_KEY] = products[0]
 
     selected_product = st.session_state[_SELECTED_PRODUCT_KEY]
     product_frame = product_team[product_team["Product"].eq(selected_product)].copy()
-    left_rail, center, right_rail = st.columns([1.25, 3.5, 1.25], gap="large")
-    with left_rail:
-        _render_product_rail(
-            "ccc-portfolio-rail", "C&amp;C portfolio", "ccc_product_button_", primary_products, selected_product
-        )
+    if group == PORTFOLIO_GROUPS[2]:
+        center, rail = st.columns([3.5, 1.25], gap="large")
+        rail_key = "other-portfolio-rail"
+    else:
+        rail, center = st.columns([1.25, 3.5], gap="large")
+        rail_key = "ccc-portfolio-rail"
+    with rail:
+        _render_product_rail(rail_key, escape(group), "team_product_button_", products, selected_product)
     with center:
         _render_product_detail(selected_product, product_frame)
-    with right_rail:
-        _render_product_rail(
-            "other-portfolio-rail", "Other products", "other_product_button_", other_products, selected_product
-        )
 
 
 def render_team_structure(file_path: str) -> None:
     inject_css("team.css")
     frame = load_data(file_path)
     st.markdown("<div class='page-kicker'>SWA workforce intelligence</div>", unsafe_allow_html=True)
-    st.markdown("<h1 class='page-title'>C&amp;C Product Delivery Structure</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='page-title'>Product Delivery Structure</h1>", unsafe_allow_html=True)
     st.markdown("<div class='product-divider'></div>", unsafe_allow_html=True)
 
-    primary_products, other_products = get_products_by_portfolio(frame)
-    if not (primary_products or other_products):
-        st.info("No product teams found.")
+    selected_group = st.session_state.get(_SELECTED_PORTFOLIO_KEY)
+    for column, group in zip(st.columns(len(PORTFOLIO_GROUPS), gap="medium"), PORTFOLIO_GROUPS):
+        with column:
+            st.button(
+                group,
+                key=f"team_portfolio_{group}",
+                type="primary" if selected_group == group else "secondary",
+                width="stretch",
+                on_click=_select_team_portfolio,
+                args=(group,),
+            )
+
+    if selected_group not in PORTFOLIO_GROUPS:
+        st.info("Select a portfolio to view its product teams.")
         return
-    product_team = get_product_team(frame)
+
+    product_team = get_portfolio_team(frame, selected_group)
+    products = get_products(product_team)
+    st.markdown(f"<h2>{escape(selected_group)} Product Delivery Structure</h2>", unsafe_allow_html=True)
+    st.caption("Summary and C&C leadership reflect the overall workforce.")
     render_product_summary(frame)
     render_governance_section(get_governance_members(frame))
     st.markdown("<div class='product-divider'></div>", unsafe_allow_html=True)
-    _render_product_browser(product_team, primary_products, other_products)
+    if not products:
+        st.info(f"No product teams found for {selected_group}.")
+        return
+    _render_product_browser(product_team, products, selected_group)

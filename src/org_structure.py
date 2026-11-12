@@ -4,10 +4,18 @@ from __future__ import annotations
 
 from html import escape
 
+import pandas as pd
 import streamlit as st
 
 from common.styles import inject_css
-from org_data import ROOT_NAME, build_hierarchy, clean_data, load_data
+from org_data import (
+    ROOT_NAME,
+    build_hierarchy,
+    clean_data,
+    load_data,
+    unassigned_resources,
+    unconnected_relationships,
+)
 
 _MAX_ACCENT_DEPTH = 4
 
@@ -78,15 +86,57 @@ def render_org_chart(hierarchy: dict) -> None:
     )
 
 
+def render_unconnected_relationships(frame: pd.DataFrame) -> None:
+    groups: dict[str, dict] = {}
+    for _, row in frame.iterrows():
+        group = groups.setdefault(
+            row["Manager Key"],
+            {"key": row["Manager Key"], "name": row["Reporting Manager"], "product": "", "children": []},
+        )
+        group["children"].append(
+            {"key": row["Person Key"], "name": row["Resource Name"], "product": row["Product"], "children": []}
+        )
+    branches = "".join(
+        _node_html(group, 1)
+        for group in sorted(groups.values(), key=lambda group: group["name"].casefold())
+    )
+    st.markdown(f"<div class='org-tree'><ul class='org-list org-list-root'>{branches}</ul></div>", unsafe_allow_html=True)
+
+
 def render_org_structure(file_path: str) -> None:
     inject_css("org.css")
-    frame = clean_data(load_data(file_path))
+    raw = load_data(file_path)
+    frame = clean_data(raw)
     hierarchy = build_hierarchy(frame)
-    if not hierarchy["children"]:
-        st.warning(f"No connected reporting relationships were found below {ROOT_NAME}.")
-        return
+    unconnected = unconnected_relationships(frame, hierarchy)
+    unassigned = unassigned_resources(raw)
 
     st.markdown("<h1 class='org-title'>C&amp;C Organization Structure</h1>", unsafe_allow_html=True)
     st.markdown("<p class='org-subtitle'>Reporting Hierarchy</p>", unsafe_allow_html=True)
-    with st.container(border=True):
-        render_org_chart(hierarchy)
+    if hierarchy["children"]:
+        with st.container(border=True):
+            render_org_chart(hierarchy)
+    else:
+        st.warning(f"No connected reporting relationships were found below {ROOT_NAME}.")
+
+    if not unconnected.empty:
+        st.subheader("Reporting groups not connected to the main hierarchy")
+        st.warning(
+            f"{_plural(len(unconnected), 'reporting relationship')} cannot be linked to {ROOT_NAME}. "
+            "They are grouped by their listed manager below; check the manager's reporting chain in the workbook."
+        )
+        with st.container(border=True):
+            render_unconnected_relationships(unconnected)
+
+    if not unassigned.empty:
+        st.subheader("Resources without a reporting manager")
+        st.warning(f"{_plural(len(unassigned), 'resource')} with no reporting manager in the workbook.")
+        resources = "".join(
+            _node_html({"name": row["Resource Name"], "product": row["Product"], "children": []}, 1)
+            for _, row in unassigned.iterrows()
+        )
+        with st.container(border=True):
+            st.markdown(
+                f"<div class='org-tree'><ul class='org-list org-list-root'>{resources}</ul></div>",
+                unsafe_allow_html=True,
+            )
