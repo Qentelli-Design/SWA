@@ -151,6 +151,7 @@
     text-transform: uppercase;
 }
 .st-key-ccc-portfolio-rail,
+.st-key-concourse-portfolio-rail,
 .st-key-other-portfolio-rail {
     background: #ffffff;
     border: 1px solid var(--t-line);
@@ -158,8 +159,10 @@
     box-shadow: var(--t-shadow);
 }
 .st-key-ccc-portfolio-rail { --rail-accent: #0f766e; --rail-edge: #7cc0b8; --rail-tint: #ecf6f5; border-top: 3px solid var(--t-offshore); }
-.st-key-other-portfolio-rail { --rail-accent: #b8892b; --rail-edge: #dcc08a; --rail-tint: #fbf6ea; border-top: 3px solid var(--t-accent); }
+.st-key-concourse-portfolio-rail { --rail-accent: #b8892b; --rail-edge: #dcc08a; --rail-tint: #fbf6ea; border-top: 3px solid var(--t-accent); }
+.st-key-other-portfolio-rail { --rail-accent: #4e5792; --rail-edge: #a4add2; --rail-tint: #f0f1f8; border-top: 3px solid var(--rail-accent); }
 .st-key-ccc-portfolio-rail [data-testid="stButton"] button,
+.st-key-concourse-portfolio-rail [data-testid="stButton"] button,
 .st-key-other-portfolio-rail [data-testid="stButton"] button {
     background: #ffffff;
     border: 1px solid #d5dde8;
@@ -175,6 +178,7 @@
     white-space: normal;
 }
 .st-key-ccc-portfolio-rail [data-testid="stButton"] button:hover,
+.st-key-concourse-portfolio-rail [data-testid="stButton"] button:hover,
 .st-key-other-portfolio-rail [data-testid="stButton"] button:hover {
     background: var(--rail-tint);
     border-color: var(--rail-accent);
@@ -190,12 +194,20 @@
     box-shadow: 0 4px 12px rgba(18, 38, 63, 0.3);
     color: #ffffff;
 }
-.st-key-other-portfolio-rail [data-testid="stButton"] button[kind="primary"],
-.st-key-other-portfolio-rail [data-testid="stButton"] button[data-testid="stBaseButton-primary"] {
+.st-key-concourse-portfolio-rail [data-testid="stButton"] button[kind="primary"],
+.st-key-concourse-portfolio-rail [data-testid="stButton"] button[data-testid="stBaseButton-primary"] {
     background: linear-gradient(120deg, #b8892b 0%, #9a7020 100%);
     border-color: #9a7020;
     border-left-color: #f0d58f;
     box-shadow: 0 4px 12px rgba(154, 112, 32, 0.35);
+    color: #ffffff;
+}
+.st-key-other-portfolio-rail [data-testid="stButton"] button[kind="primary"],
+.st-key-other-portfolio-rail [data-testid="stButton"] button[data-testid="stBaseButton-primary"] {
+    background: linear-gradient(120deg, #4e5792 0%, #39426f 100%);
+    border-color: #39426f;
+    border-left-color: #b8c2ee;
+    box-shadow: 0 4px 12px rgba(57, 66, 111, 0.3);
     color: #ffffff;
 }
 
