@@ -1,14 +1,15 @@
-"""Attrition page: resource counts by 'Resource Status', excluding active resources."""
+"""Attrition page: resource counts from the Attrition worksheet."""
 
 from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
 
-from common.excel import CACHE_TTL, read_resource_list, require_workbook, workbook_token
+from common.excel import CACHE_TTL, read_sheet, require_workbook, workbook_token
 from common.styles import inject_css
 
 STATUS_COLUMN = "Resource Status"
+ATTRITION_SHEET = "Attrition"
 ATTRITION_STATUSES = ("Resigned", "Managed Attrition", "Unmanaged Attrition")
 _SELECTED_KEY = "attrition_status"
 _DETAIL_COLUMNS = ["Resource Name", "Portfolio", "Product", "Role", "Location", "Reporting Manager"]
@@ -23,9 +24,9 @@ def load_data(file_path: str) -> pd.DataFrame:
 @st.cache_data(show_spinner=False, ttl=CACHE_TTL, max_entries=8)
 def _load_attrition_data(file_path: str, mtime_ns: int, size: int) -> pd.DataFrame:
     del mtime_ns, size
-    frame = read_resource_list(file_path)
+    frame = read_sheet(file_path, ATTRITION_SHEET)
     if STATUS_COLUMN not in frame.columns:
-        raise ValueError(f"The 'Resource List' sheet is missing: {STATUS_COLUMN}")
+        raise ValueError(f"The '{ATTRITION_SHEET}' sheet is missing: {STATUS_COLUMN}")
     for column in _DETAIL_COLUMNS:
         if column not in frame.columns:
             frame[column] = ""

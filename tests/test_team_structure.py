@@ -1,4 +1,5 @@
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -7,7 +8,53 @@ from streamlit.testing.v1 import AppTest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from team_data import PORTFOLIO_GROUPS, get_portfolio_team, get_products
+from team_data import (
+    LEADERSHIP_ROOT, PORTFOLIO_GROUPS, email_display_name,
+    get_leadership_hierarchy, get_portfolio_team, get_products, load_data,
+)
+
+
+class DisplayNameTests(unittest.TestCase):
+    def test_workbook_xid_loading_and_missing_column(self):
+        frame = pd.DataFrame([{
+            "Portfolio": "CCC", "Product": "Alpha", "Resource Name": "Test",
+            "XID": " x123 ", "Location": "Onsite", "Role": "Engineer",
+            "Vendor": "", "Reporting Manager": "",
+        }, {
+            "Portfolio": "CCC", "Product": "Alpha", "Resource Name": "Other",
+            "XID": None, "Location": "Offshore", "Role": "Engineer",
+            "Vendor": "", "Reporting Manager": "",
+        }])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "resources.xlsx"
+            frame.to_excel(path, sheet_name="Resource List", index=False)
+            self.assertEqual(load_data(str(path))["XID"].tolist(), ["x123", ""])
+            frame.drop(columns=["XID"]).to_excel(path, sheet_name="Resource List", index=False)
+            with self.assertRaisesRegex(ValueError, "missing: XID"):
+                load_data(str(path))
+
+    def test_email_names_and_fallbacks(self):
+        examples = [
+            (" first.last@qentelli.com ", "First Last"),
+            ("FIRST.MIDDLE.LAST@QENTELLI.COM", "First Middle Last"),
+            ("firstname@qentelli.com", "Firstname"),
+            ("", "Original Name"),
+            ("first.last@example.com", "Original Name"),
+            ("@qentelli.com", "Original Name"),
+        ]
+        for email, expected in examples:
+            with self.subTest(email=email):
+                self.assertEqual(email_display_name(email, "Original Name"), expected)
+
+    def test_leadership_names_use_email_without_changing_reporting_links(self):
+        governance = pd.DataFrame([
+            ("Original Manager", LEADERSHIP_ROOT, "first.manager@qentelli.com", "x111"),
+            ("Original Report", "Original Manager", "second.report@qentelli.com", ""),
+        ], columns=["Resource Name", "Reporting Manager", "Qentelli Mail ID", "XID"])
+        hierarchy = get_leadership_hierarchy(governance)
+        self.assertEqual(hierarchy["name"], LEADERSHIP_ROOT)
+        self.assertEqual(hierarchy["children"][0]["name"], "First Manager")
+        self.assertEqual(hierarchy["children"][0]["children"][0]["name"], "Second Report")
 
 
 class PortfolioGroupingTests(unittest.TestCase):
@@ -57,7 +104,7 @@ frame = pd.DataFrame([
     ("C360", "C360", "C360 Person", "Engineer", "Onsite"),
     ("Other", "Beta", "Other Person", "Engineer", "Offshore"),
 ], columns=["Portfolio", "Product", "Resource Name", "Role", "Location Normalized"])
-for column in ["Vendor", "Qentelli Designation", "Qentelli ID", "Qentelli Mail ID", "Qentelli DOJ",
+for column in ["Vendor", "Qentelli Designation", "Qentelli ID", "Qentelli Mail ID", "Qentelli DOJ", "XID",
                "Reporting Manager"]:
     frame[column] = ""
 frame["Is Consultant"] = False
@@ -77,6 +124,103 @@ class PortfolioBrowserTests(unittest.TestCase):
 
     def markdown_text(self):
         return "\n".join(item.value for item in self.app.markdown)
+
+    def test_sidebar_xid_toggle_for_leads_members_and_leadership(self):
+        script = APP_SCRIPT.replace(
+            'frame["Is Consultant"] = False',
+            '''frame["Is Consultant"] = False
+frame.loc[0, "Qentelli Mail ID"] = "jane.doe@qentelli.com"
+frame.loc[0, "Role"] = "Lead Onsite"
+frame.loc[0, "XID"] = "x123456"
+frame.loc[1, "Qentelli Mail ID"] = "john.smith@qentelli.com"
+frame.loc[1, "Vendor"] = "Rebadge"
+frame.loc[2, "XID"] = "x789123"
+governance = frame.iloc[0].copy()
+governance["Resource Name"] = "Original Manager"
+governance["Qentelli Mail ID"] = "first.manager@qentelli.com"
+governance["Reporting Manager"] = "Siva Rao Kompella S V"
+governance["Role"] = "Governance"
+governance["XID"] = "x555555"
+frame = pd.concat([frame, pd.DataFrame([governance])], ignore_index=True)
+''',
+        )
+        app = AppTest.from_string(script).run()
+        self.assertFalse(app.exception)
+        self.assertEqual(app.toggle(key="team_show_xid").label, "Show XID")
+        self.assertFalse(app.toggle(key="team_show_xid").value)
+        markup = "\n".join(item.value for item in app.markdown)
+        self.assertIn("Jane Doe", markup)
+        self.assertNotIn("(x123456)", markup)
+        app.toggle(key="team_show_xid").set_value(True).run()
+        self.assertFalse(app.exception)
+        markup = "\n".join(item.value for item in app.markdown)
+        self.assertIn('Jane Doe <span class="team-xid">(x123456)</span>', markup)
+        self.assertIn("First Manager", markup)
+        self.assertIn("Siva Rao Kompella S V", markup)
+        self.assertNotIn("(x555555)", markup)
+        self.assertNotIn("Siva Rao Kompella S V (NA)", markup)
+        app.button(key="team_product_button_Shared").click().run()
+        markup = "\n".join(item.value for item in app.markdown)
+        self.assertIn('John Smith <span class="team-xid">(NA)</span> - Rebadge', markup)
+        app.button(key="team_portfolio_Concourse").click().run()
+        self.assertIn('Concourse Shared <span class="team-xid">(x789123)</span>', "\n".join(item.value for item in app.markdown))
+        app.toggle(key="team_show_xid").set_value(False).run()
+        markup = "\n".join(item.value for item in app.markdown)
+        self.assertNotIn("(x789123)", markup)
+        self.assertNotIn("(NA)", markup)
+        self.assertIn("Concourse Shared", markup)
+
+    def test_summary_and_leadership_appear_before_portfolio_controls(self):
+        for group in PORTFOLIO_GROUPS:
+            with self.subTest(group=group):
+                self.click(f"team_portfolio_{group}")
+                elements = list(self.app.main)
+                caption = next(i for i, element in enumerate(elements)
+                               if element.type == "caption" and
+                               element.value == "Overall workforce overview and C&C leadership.")
+                metric = next(i for i, element in enumerate(elements) if element.type == "metric")
+                leadership = next(i for i, element in enumerate(elements)
+                                  if element.type == "markdown" and "<div class='governance-card'>" in element.value)
+                tab = next(i for i, element in enumerate(elements)
+                           if element.type == "button" and element.key == "team_portfolio_C&C")
+                heading = next(i for i, element in enumerate(elements)
+                               if element.type == "markdown" and "Product Delivery Structure</h2>" in element.value)
+                self.assertLess(caption, metric)
+                self.assertLess(metric, leadership)
+                self.assertLess(leadership, tab)
+                self.assertLess(tab, heading)
+
+    def test_team_cards_leads_and_consultant_badge(self):
+        script = APP_SCRIPT.replace(
+            'frame["Is Consultant"] = False',
+            '''frame["Is Consultant"] = False
+frame.loc[0, "Qentelli Mail ID"] = "jane.doe@qentelli.com"
+frame.loc[0, "Role"] = "Lead Onsite"
+frame.loc[0, "Is Consultant"] = True
+frame.loc[0, "Qentelli ID"] = "LEAD-123"
+frame.loc[0, "Qentelli DOJ"] = "01 Jan 2020"
+frame.loc[1, "Qentelli Mail ID"] = "john.smith@qentelli.com"
+frame.loc[1, "Vendor"] = "Rebadge"
+frame.loc[1, "Is Consultant"] = True
+frame.loc[1, "Qentelli ID"] = "MEMBER-123"
+''',
+        )
+        app = AppTest.from_string(script).run()
+        self.assertFalse(app.exception)
+        markup = "\n".join(item.value for item in app.markdown)
+        self.assertIn("Jane Doe", markup)
+        self.assertNotIn("CCC Person", markup)
+        self.assertIn("<span class='consultant-tag'>Q Consultant</span>", markup)
+        self.assertNotIn("LEAD-123", markup)
+        self.assertNotIn("jane.doe@qentelli.com", markup)
+        self.assertNotIn("01 Jan 2020", markup)
+        app.button(key="team_product_button_Shared").click().run()
+        markup = "\n".join(item.value for item in app.markdown)
+        self.assertIn("John Smith - Rebadge", markup)
+        self.assertNotIn("CCC Shared", markup)
+        self.assertIn("<span class='consultant-tag'>Q Consultant</span>", markup)
+        self.assertNotIn("MEMBER-123", markup)
+        self.assertNotIn("john.smith@qentelli.com", markup)
 
     def test_product_rail_precedes_details_for_each_portfolio(self):
         rail_keys = ("ccc-portfolio-rail", "concourse-portfolio-rail", "other-portfolio-rail")

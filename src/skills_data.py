@@ -85,8 +85,8 @@ def _detect_skill_columns(frame: pd.DataFrame, exclude: set[str]) -> list[str]:
 def load_resource_skills(file_path: str | None = None) -> pd.DataFrame:
     """Load the resources sheet and reshape it to one row per (resource, skill).
 
-    Returns columns: Resource Name, Product Name, Skill. A resource with the same
-    skill in multiple cells (or duplicate cells) appears only once for that skill.
+    Returns columns: Resource Name, Product Name, Skill. Duplicate skills for the
+    same resource and product appear only once.
     """
     path = require_workbook(file_path or CCC_RESOURCE_SKILLSET_FILE_PATH, "Resources workbook not found: {path}")
     resolved, mtime_ns, size = workbook_token(path)
@@ -95,6 +95,19 @@ def load_resource_skills(file_path: str | None = None) -> pd.DataFrame:
 
 @st.cache_data(show_spinner="Loading resource skills...", ttl=CACHE_TTL, max_entries=8)
 def _load_resource_skills(file_path: str, mtime_ns: int, size: int) -> pd.DataFrame:
+    rows = _load_skill_rows(file_path, mtime_ns, size)
+    return rows[rows["Skill"].ne("")].reset_index(drop=True)
+
+
+def load_team_skills(file_path: str | None = None) -> pd.DataFrame:
+    """Load resource skills, retaining resources without recorded skills."""
+    path = require_workbook(file_path or CCC_RESOURCE_SKILLSET_FILE_PATH, "Resources workbook not found: {path}")
+    resolved, mtime_ns, size = workbook_token(path)
+    return _load_skill_rows(resolved, mtime_ns, size)
+
+
+@st.cache_data(show_spinner="Loading resource skills...", ttl=CACHE_TTL, max_entries=8)
+def _load_skill_rows(file_path: str, mtime_ns: int, size: int) -> pd.DataFrame:
     del mtime_ns, size
     try:
         raw = read_excel_frame(Path(file_path), "Resource List")
@@ -111,20 +124,33 @@ def _load_resource_skills(file_path: str, mtime_ns: int, size: int) -> pd.DataFr
     if product_col is None:
         raise ValueError("Product/Product Name/Team column not found in resources sheet.")
 
-    raw[resource_col] = raw[resource_col].astype(str).str.strip()
-    raw[product_col] = raw[product_col].astype(str).str.strip().replace({"CCC": "C&C"})
+    raw[resource_col] = raw[resource_col].fillna("").astype(str).str.strip()
+    raw[product_col] = raw[product_col].fillna("").astype(str).str.strip().replace({"CCC": "C&C", "": "Unassigned"})
     raw = raw[raw[resource_col].ne("")].reset_index(drop=True)
 
     skill_cols = _detect_skill_columns(raw, exclude={resource_col, product_col})
     if not skill_cols:
-        return pd.DataFrame(columns=["Resource Name", "Product Name", "Skill"])
+        rows = raw[[resource_col, product_col]].rename(
+            columns={resource_col: "Resource Name", product_col: "Product Name"}
+        ).copy()
+        rows["Skill"] = ""
+        return rows.drop_duplicates().reset_index(drop=True)
 
     long_df = raw.melt(id_vars=[resource_col, product_col], value_vars=skill_cols, value_name="_raw_skill")
     long_df = long_df.rename(columns={resource_col: "Resource Name", product_col: "Product Name"})
     long_df["Skill"] = long_df["_raw_skill"].map(_normalize_skill_token)
-    long_df = long_df[long_df["Skill"].ne("")]
-    long_df = long_df.drop_duplicates(subset=["Resource Name", "Skill"])
+    long_df = long_df.drop_duplicates(subset=["Resource Name", "Product Name", "Skill"])
     return long_df[["Resource Name", "Product Name", "Skill"]].reset_index(drop=True)
+
+
+def get_team_skill_details(team_df: pd.DataFrame, product: str) -> pd.DataFrame:
+    """Summarize each product resource and their distinct recorded skills."""
+    subset = team_df[team_df["Product Name"].eq(product)]
+    return (
+        subset.groupby("Resource Name", sort=True)["Skill"]
+        .agg(lambda skills: ", ".join(sorted(set(skill for skill in skills if skill))) or "No skills recorded")
+        .reset_index(name="Skills")
+    )
 
 
 def load_skill_categories(file_path: str | None = None) -> dict[str, list[str]]:

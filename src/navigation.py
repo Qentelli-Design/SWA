@@ -4,22 +4,12 @@ from __future__ import annotations
 
 import base64
 from functools import lru_cache
-from html import escape
 from pathlib import Path
 
 import streamlit as st
 
-from common.excel import sheet_names
 from common.styles import inject_css
-from config import (
-    BRAND_IMAGE_PATH,
-    CCC_RESOURCE_SKILLSET_FILE_PATH,
-    CCC_RESOURCES_FILE_PATH,
-    BAU_PERFORMANCE_FILE_PATH,
-    ORG_STRUCTURE_FILE_PATH,
-    PROJECT_DELIVERY_STATUS_FILE_PATH,
-    SWA_IMAGE_PATH,
-)
+from config import BRAND_IMAGE_PATH, SWA_IMAGE_PATH
 
 SECTIONS: tuple[str, ...] = (
     "Project Delivery Status",
@@ -39,31 +29,6 @@ _HEADERLESS_SECTIONS = frozenset(
     {"Team Structure", "ORG Structure", "Project Delivery Status", "BAU Performance"}
 )
 _SECTION_STATE = "dashboard_section"
-_PRODUCT_WORKBOOK_SECTIONS = frozenset(
-    {"Project Delivery Status", "Releases/Milestones", "Risks", "BAU Performance"}
-)
-_SOURCE_WORKBOOKS = {
-    "Project Delivery Status": PROJECT_DELIVERY_STATUS_FILE_PATH,
-    "Releases/Milestones": PROJECT_DELIVERY_STATUS_FILE_PATH,
-    "Risks": PROJECT_DELIVERY_STATUS_FILE_PATH,
-    "Billability": CCC_RESOURCES_FILE_PATH,
-    "Attrition": CCC_RESOURCES_FILE_PATH,
-    "Team Structure": CCC_RESOURCES_FILE_PATH,
-    "ORG Structure": ORG_STRUCTURE_FILE_PATH,
-    "Offshore Team Skillset": CCC_RESOURCE_SKILLSET_FILE_PATH,
-    "Quick Links": CCC_RESOURCES_FILE_PATH,
-    "BAU Performance": BAU_PERFORMANCE_FILE_PATH,
-}
-_SOURCE_SHEETS = {
-    "Billability": ("Resource List",),
-    "Team Structure": ("Resource List",),
-    "ORG Structure": ("Resource List",),
-    "Attrition": ("Resource List",),
-    "Offshore Team Skillset": ("Resource List", "Skill Categories"),
-    "Quick Links": ("Sharepoint links",),
-}
-
-
 _IMAGE_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 
 
@@ -151,40 +116,16 @@ def render_section_header(selected_section: str) -> None:
     st.title(selected_section)
 
 
-def _render_source_details(selected_section: str) -> None:
-    workbook_path = _SOURCE_WORKBOOKS.get(selected_section)
-    if selected_section == "Certifications" or workbook_path is None:
-        body = '<div class="source-empty">No data source for this tab</div>'
-    else:
-        if selected_section in _PRODUCT_WORKBOOK_SECTIONS:
-            try:
-                worksheets = sheet_names(workbook_path)
-            except (FileNotFoundError, OSError, ValueError):
-                worksheets = ("Unable to read worksheet names",)
-        else:
-            worksheets = _SOURCE_SHEETS[selected_section]
-        worksheet_label = "All sheets" if len(worksheets) > 1 else worksheets[0]
-        body = (
-            f'<div class="source-file">{escape(Path(workbook_path).name)}</div>'
-            f'<div class="source-sheet">{escape(worksheet_label)}</div>'
-        )
-    st.markdown(
-        f'<div class="source-card"><div class="source-label">Data source</div>{body}</div>',
-        unsafe_allow_html=True,
-    )
-
-
-def render_sidebar(selected_section: str) -> None:
+def render_sidebar() -> None:
     with st.sidebar:
-        if BRAND_IMAGE_PATH.is_file():
-            _render_logo(BRAND_IMAGE_PATH, 90)
-        st.button(
-            "Dashboard overview",
-            width="stretch",
-            type="secondary",
-            on_click=select_section,
-            args=(None,),
-        )
-        st.divider()
-        with st.container(key="source-details"):
-            _render_source_details(selected_section)
+        with st.container(key="sidebar-brand"):
+            if BRAND_IMAGE_PATH.is_file():
+                _render_logo(BRAND_IMAGE_PATH, 90)
+            st.button(
+                "Return to Home",
+                key="return-home",
+                width="stretch",
+                type="secondary",
+                on_click=select_section,
+                args=(None,),
+            )

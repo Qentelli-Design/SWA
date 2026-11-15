@@ -1,9 +1,57 @@
+        .st-key-skills_view {
+            padding: 0.8rem 1rem 0.9rem;
+            background: #ffffff;
+            border: 1px solid #d5dde8;
+            border-top: 3px solid #1d3a5f;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(15, 38, 63, 0.06), 0 4px 14px rgba(15, 38, 63, 0.05);
+        }
+        .st-key-skills_view [data-testid="stWidgetLabel"] p {
+            color: #64748b;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .st-key-skills_view [role="radiogroup"] {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+        .st-key-skills_view [role="radio"] {
+            background: #f4f8fc;
+            border: 1px solid #d5dde8;
+            border-radius: 8px;
+            color: #1d3a5f;
+            font-weight: 600;
+            min-height: 2.5rem;
+            padding: 0.4rem 0.9rem;
+        }
+        .st-key-skills_view [role="radio"]:hover {
+            background: #e8f0f9;
+            border-color: #1d3a5f;
+        }
+        .st-key-skills_view [role="radio"][aria-checked="true"],
+        .st-key-skills_view [role="radio"][aria-checked="true"]:hover {
+            background: linear-gradient(120deg, #12263f, #1d3a5f);
+            border-color: #12263f;
+            color: #ffffff;
+        }
+        .st-key-skills_view [role="radio"]:focus-visible {
+            outline: 2px solid #1e4e8c;
+            outline-offset: 2px;
+        }
         .sk-breadcrumb {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 0.35rem;
-            margin: 0.25rem 0 1rem;
+            gap: 0.45rem;
+            margin: 0.5rem 0 0.7rem;
+            padding: 0.7rem 0.9rem;
+            background: #f4f8fc;
+            border: 1px solid #d5dde8;
+            border-left: 4px solid #1d3a5f;
+            border-radius: 8px;
             font-family: "DM Sans", sans-serif;
             color: #5b6b7b;
         }

@@ -12,6 +12,7 @@ REQUIRED_COLUMNS = [
     "Portfolio",
     "Product",
     "Resource Name",
+    "XID",
     "Location",
     "Role",
     "Vendor",
@@ -33,6 +34,15 @@ LEADERSHIP_DISPLAY_NAMES = {
     person_key("Gundimeda Swetha"): "Swetha Gundimeda",
     person_key("Yalavarthy Kanti Krishna"): "Kanti Yalavarthy",
 }
+
+
+def email_display_name(email: str, fallback: str) -> str:
+    """Derive a display name from a Qentelli address, or retain the existing name."""
+    local, separator, domain = email.strip().rpartition("@")
+    if not separator or domain.casefold() != "qentelli.com":
+        return fallback
+    parts = [part for part in local.split(".") if part]
+    return " ".join(part.capitalize() for part in parts) if parts else fallback
 
 
 def load_data(file_path: str) -> pd.DataFrame:
@@ -114,9 +124,12 @@ def get_leadership_hierarchy(governance: pd.DataFrame) -> dict:
         manager = row["Reporting Manager"]
         person = person_key(name)
         manager_key = person_key(manager)
-        if not person or not manager_key:
+        if not person:
             continue
-        names.setdefault(person, LEADERSHIP_DISPLAY_NAMES.get(person, name))
+        fallback = LEADERSHIP_DISPLAY_NAMES.get(person, name)
+        names.setdefault(person, email_display_name(row["Qentelli Mail ID"], fallback))
+        if not manager_key:
+            continue
         reports.setdefault(manager_key, [])
         if person not in reports[manager_key]:
             reports[manager_key].append(person)

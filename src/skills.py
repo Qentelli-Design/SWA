@@ -1,4 +1,4 @@
-﻿"""Skills page: the Skills -> Category -> Skill -> Resources drill-down."""
+﻿"""Skills page: team-wise skills and the category drill-down."""
 
 from __future__ import annotations
 
@@ -14,13 +14,26 @@ from skills_data import (
     get_category_counts,
     get_resources_by_skill,
     get_skill_counts,
+    get_team_skill_details,
     load_resource_skills,
     load_skill_categories,
+    load_team_skills,
     to_excel_bytes,
 )
 
 _CATEGORY_KEY = "skills_category"
 _SKILL_KEY = "skills_skill"
+_PRODUCT_KEY = "skills_product"
+_TEAM_VIEW = "Team-wise skills"
+_CATEGORY_VIEW = "Skills by category"
+
+
+def _select_product(product: str) -> None:
+    st.session_state[_PRODUCT_KEY] = product
+
+
+def _back_to_products() -> None:
+    st.session_state[_PRODUCT_KEY] = None
 
 
 def _select_category(category: str) -> None:
@@ -125,13 +138,65 @@ def _render_resources_for_skill(long_df: pd.DataFrame, category: str, skill: str
     )
 
 
+def _render_team_skills(team_df: pd.DataFrame) -> None:
+    products = sorted(team_df["Product Name"].unique(), key=str.casefold)
+    if not products:
+        st.info("No team resources were found in the resources sheet.")
+        return
+
+    product = st.session_state.get(_PRODUCT_KEY)
+    if product not in products:
+        product = None
+        st.session_state[_PRODUCT_KEY] = None
+
+    if product is None:
+        _breadcrumb("Team-wise skills", "Products")
+        st.caption("Select a product to see its resources and their skills.")
+        counts = team_df.groupby("Product Name")["Resource Name"].nunique()
+        with st.container(key="skills-grid"):
+            columns = st.columns(3)
+            for index, name in enumerate(products):
+                with columns[index % 3]:
+                    st.button(
+                        f"{name}  ({counts[name]})",
+                        key=f"skills_product_{name}",
+                        icon=":material/groups:",
+                        width="stretch",
+                        on_click=_select_product,
+                        args=(name,),
+                    )
+        return
+
+    st.button("\u2190 Back to products", key="back_to_products", on_click=_back_to_products)
+    _breadcrumb("Team-wise skills", product)
+    details = get_team_skill_details(team_df, product)
+    st.markdown(
+        f"<div class='sk-total'><span class='sk-total-value'>{len(details)}</span>"
+        "<span class='sk-total-label'>Team resources</span></div>",
+        unsafe_allow_html=True,
+    )
+    with st.container(key="skills-table"):
+        st.dataframe(details, width="stretch", hide_index=True)
+
+
 def render_skills(file_path: str | None = None) -> None:
-    """Render the dynamic Skills → Category → Skill → Resources drill-down."""
+    """Render team-wise skills or the category-to-resource drill-down."""
     inject_css("skills.css")
     st.session_state.setdefault(_CATEGORY_KEY, None)
     st.session_state.setdefault(_SKILL_KEY, None)
 
+    view = st.segmented_control(
+        "View skills by",
+        [_TEAM_VIEW, _CATEGORY_VIEW],
+        default=_TEAM_VIEW,
+        required=True,
+        key="skills_view",
+    )
+
     try:
+        if view == _TEAM_VIEW:
+            _render_team_skills(load_team_skills(file_path))
+            return
         long_df = load_resource_skills(file_path)
         load_skill_categories(file_path)
     except DATA_ERRORS as error:
@@ -151,4 +216,3 @@ def render_skills(file_path: str | None = None) -> None:
         _render_skills_in_category(long_df, category, file_path)
     else:
         _render_resources_for_skill(long_df, category, skill)
-

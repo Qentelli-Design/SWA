@@ -36,8 +36,8 @@ Shared helpers live in `src/common/`: `excel.py` (cached workbook reads), `deliv
 
 ## Workbooks
 
-- `excel/CCC_Resources.xlsx`: Billability, Team Structure, ORG Structure, and Quick Links. Quick Links uses the `Sharepoint links` sheet with `Folder or File name` and `Link` columns; each Link cell needs an Excel hyperlink target.
-- `excel/CCC_Resource_Skillset.xlsx`: Skills, with `Resource List` and `Skill Categories` sheets.
+- `excel/CCC_Resources.xlsx`: Billability, Team Structure, ORG Structure, Attrition, and Quick Links. Attrition reads the `Attrition` sheet and groups records by `Resource Status`. Quick Links uses the `Sharepoint links` sheet with `Folder or File name` and `Link` columns; each Link cell needs an Excel hyperlink target.
+- `excel/CCC_Resource_Skillset.xlsx`: Skills, with `Resource List` and `Skill Categories` sheets. The default team-wise view lists products and each resource's skills; the category view provides the existing category and skill drill-down. Resources without a product appear under Unassigned.
 - `excel/Product_Status_Report.xlsx`: Project Delivery Status, Releases/Milestones, and Risks. These views read product worksheets from this workbook.
   Product Delivery and Releases/Milestones hide activities that are completed and have an Actual End Date older than 20 days.
 
@@ -47,6 +47,11 @@ Team Structure groups product resources by the `Resource List` sheet's `Portfoli
 `CCC` appears under C&C, `Concourse` under Concourse, and all other values under C360 and
 Other Products. Product details contain only rows from the selected group; the summary and
 C&C leadership remain overall.
+Product Delivery Structure displays names from `Qentelli Mail ID`, replacing dots with spaces
+and capitalizing each part. When an email is unavailable, the existing name is retained; the
+leadership root remains unchanged because it is not a resource row in the workbook.
+Use **Show XID** in the sidebar to display each product team's `XID` from
+`Resource List`; missing IDs appear as `NA`. The C&C leadership chart does not show XIDs.
 
 ORG Structure shows the reporting tree below Siva Rao Kompella S V. Reporting relationships
 that cannot be connected to that tree are shown separately under their listed managers, and

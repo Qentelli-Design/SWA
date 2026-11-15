@@ -12,6 +12,7 @@ from team_data import (
     PORTFOLIO_GROUPS,
     build_team_metrics,
     count_by_location,
+    email_display_name,
     get_governance_members,
     get_leadership_hierarchy,
     get_portfolio_team,
@@ -21,6 +22,7 @@ from team_data import (
 
 _SELECTED_PORTFOLIO_KEY = "selected_team_portfolio"
 _SELECTED_PRODUCT_KEY = "selected_team_product"
+_SHOW_XID_KEY = "team_show_xid"
 
 
 def _card_class(role: str) -> str:
@@ -36,22 +38,19 @@ def _is_rebadge(resource: pd.Series) -> bool:
     return resource["Vendor"].casefold() == "rebadge"
 
 
-def _display_name(resource: pd.Series) -> str:
-    return f"{resource['Resource Name']} - Rebadge" if _is_rebadge(resource) else resource["Resource Name"]
+def _display_name_html(resource: pd.Series) -> str:
+    name = email_display_name(resource["Qentelli Mail ID"], resource["Resource Name"])
+    result = escape(name)
+    if st.session_state.get(_SHOW_XID_KEY, False):
+        xid = escape(resource["XID"].strip() or "NA")
+        result += f' <span class="team-xid">({xid})</span>'
+    return result + (" - Rebadge" if _is_rebadge(resource) else "")
 
 
 def _consultant_tag(resource: pd.Series) -> str:
     if not resource["Is Consultant"]:
         return ""
-    details = [
-        resource["Resource Name"],
-        resource["Qentelli Designation"],
-        f"ID: {resource['Qentelli ID']}" if resource["Qentelli ID"] else "",
-        resource["Qentelli Mail ID"],
-        f"Joined: {resource['Qentelli DOJ']}" if resource["Qentelli DOJ"] else "",
-    ]
-    tooltip = escape(" | ".join(detail for detail in details if detail))
-    return f"<span class='consultant-tag' title='{tooltip}'>Q Consultant</span>"
+    return "<span class='consultant-tag'>Q Consultant</span>"
 
 
 def render_team_member_card(resource: pd.Series) -> None:
@@ -61,7 +60,7 @@ def render_team_member_card(resource: pd.Series) -> None:
         card_class += " rebadge-member"
     st.markdown(
         f'<div class="team-card {card_class}">'
-        f'<div class="team-card-name">{escape(_display_name(resource))}</div>'
+        f'<div class="team-card-name">{_display_name_html(resource)}</div>'
         f"{_consultant_tag(resource)}</div>",
         unsafe_allow_html=True,
     )
@@ -70,7 +69,7 @@ def render_team_member_card(resource: pd.Series) -> None:
 def render_lead_card(resource: pd.Series) -> None:
     st.markdown(
         f'<div class="lead-card {_card_class(resource["Role"])}">'
-        f'<div class="lead-heading"><div class="lead-name">{escape(_display_name(resource))}</div>'
+        f'<div class="lead-heading"><div class="lead-name">{_display_name_html(resource)}</div>'
         f"{_consultant_tag(resource)}</div>"
         f'<div class="lead-role">{escape(resource["Role"])}</div></div>',
         unsafe_allow_html=True,
@@ -207,8 +206,15 @@ def _render_product_browser(
 def render_team_structure(file_path: str) -> None:
     inject_css("team.css")
     frame = load_data(file_path)
+    with st.sidebar:
+        st.toggle("Show XID", value=False, key=_SHOW_XID_KEY)
     st.markdown("<div class='page-kicker'>SWA workforce intelligence</div>", unsafe_allow_html=True)
     st.markdown("<h1 class='page-title'>Product Delivery Structure</h1>", unsafe_allow_html=True)
+    st.markdown("<div class='product-divider'></div>", unsafe_allow_html=True)
+
+    st.caption("Overall workforce overview and C&C leadership.")
+    render_product_summary(frame)
+    render_governance_section(get_governance_members(frame))
     st.markdown("<div class='product-divider'></div>", unsafe_allow_html=True)
 
     selected_group = st.session_state.setdefault(_SELECTED_PORTFOLIO_KEY, PORTFOLIO_GROUPS[0])
@@ -230,10 +236,6 @@ def render_team_structure(file_path: str) -> None:
     product_team = get_portfolio_team(frame, selected_group)
     products = get_products(product_team)
     st.markdown(f"<h2>{escape(selected_group)} Product Delivery Structure</h2>", unsafe_allow_html=True)
-    st.caption("Summary and C&C leadership reflect the overall workforce.")
-    render_product_summary(frame)
-    render_governance_section(get_governance_members(frame))
-    st.markdown("<div class='product-divider'></div>", unsafe_allow_html=True)
     if not products:
         st.info(f"No product teams found for {selected_group}.")
         return
