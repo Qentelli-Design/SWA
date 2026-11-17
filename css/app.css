@@ -7,8 +7,6 @@
         --ink: #17212b;
         --muted: #65727d;
         --paper: #f4f7f6;
-        --teal: #087f8c;
-        --orange: #d96c38;
     }
 
     .stApp {
@@ -44,27 +42,6 @@
         font-weight: 600;
     }
 
-    [data-testid="stSidebar"] [data-testid="stRadio"] label {
-        background: transparent;
-        border: 0;
-        border-radius: 0;
-        margin-bottom: 0.15rem;
-        padding: 0.3rem 0;
-    }
-
-    [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
-        background: transparent;
-    }
-
-    [data-testid="stSidebar"] [data-testid="stRadio"] label p {
-        color: #edf4f2 !important;
-        font-weight: 600;
-    }
-
-    [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) p {
-        color: #75d3cc !important;
-    }
-
     .stApp button,
     .stApp input,
     .stApp textarea,
@@ -93,12 +70,15 @@
         letter-spacing: 0;
     }
 
+    .st-key-attrition-heading h1 { text-align: center; }
+
+    [data-testid="stDialog"] h2 strong { font-weight: 700 !important; }
+
     .stApp h2,
     .stApp h3,
     .stApp h4,
     .stApp h5,
     .stApp h6,
-    .stApp .section-title,
     .stApp .dialog-product-title,
     .stApp .delivery-card-title,
     .stApp .team-heading,
@@ -107,9 +87,6 @@
     .stApp .selected-product-name,
     .stApp .member-heading,
     .stApp .org-root-name,
-    .stApp .org-branch-label,
-    .stApp .org-manager-note,
-    .stApp .product-title h2,
     .stApp [data-testid="stExpander"] summary {
         font-family: var(--app-font) !important;
         font-size: var(--inner-heading-size) !important;
@@ -141,45 +118,12 @@
 
     .stApp .landing-title { font-size: 1.755rem !important; }
     .stApp .delivery-card-title { font-size: 1.0125rem !important; }
-    .stApp h3.all-risks-heading,
-    .stApp h3.risks-mitigation-heading,
-    .stApp h3.billability-summary-heading,
-    .stApp h3.skill-categories-heading { font-size: 1.0125rem !important; }
     .stApp .org-root-name { font-size: 1.1475rem !important; }
-
-    .eyebrow {
-        color: var(--teal);
-        display: block;
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.9rem;
-        font-weight: 700;
-        letter-spacing: 0.12em;
-        margin-top: calc(0.75rem + 10px);
-        position: relative;
-        text-transform: uppercase;
-        z-index: 1;
-    }
 
     .hero-copy {
         color: var(--muted);
         font-size: 1rem;
         margin-bottom: 1.25rem;
-    }
-
-    .section-note {
-        color: var(--muted);
-        font-size: 0.88rem;
-        margin-top: -0.35rem;
-    }
-
-    .source-pill {
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        border-radius: 8px;
-        color: #b9d6d2;
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.78rem;
-        line-height: 1.45;
-        padding: 0.7rem;
     }
 
     [data-testid="stButton"] button {

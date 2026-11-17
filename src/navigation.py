@@ -13,8 +13,6 @@ from config import BRAND_IMAGE_PATH, SWA_IMAGE_PATH
 
 SECTIONS: tuple[str, ...] = (
     "Project Delivery Status",
-    "Releases/Milestones",
-    "Risks",
     "BAU Performance",
     "Team Structure",
     "ORG Structure",
@@ -29,6 +27,7 @@ _HEADERLESS_SECTIONS = frozenset(
     {"Team Structure", "ORG Structure", "Project Delivery Status", "BAU Performance"}
 )
 _SECTION_STATE = "dashboard_section"
+DELIVERY_VIEW_STATE = "project_delivery_view"
 _IMAGE_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 
 
@@ -53,6 +52,7 @@ def ensure_session_state() -> None:
 
 def select_section(section: str | None) -> None:
     st.session_state[_SECTION_STATE] = section
+    st.session_state.pop(DELIVERY_VIEW_STATE, None)
 
 
 def current_section() -> str | None:
@@ -61,11 +61,9 @@ def current_section() -> str | None:
     return section if isinstance(section, str) else None
 
 
-_NAV_ROWS: tuple[tuple[str, ...], ...] = (SECTIONS[:2], SECTIONS[2:6], SECTIONS[6:])
+_NAV_ROWS: tuple[tuple[str, ...], ...] = (SECTIONS[:1], SECTIONS[1:5], SECTIONS[5:])
 _SECTION_ICONS = {
     "Project Delivery Status": ":material/rocket_launch:",
-    "Releases/Milestones": ":material/event_available:",
-    "Risks": ":material/warning:",
     "BAU Performance": ":material/trending_up:",
     "Team Structure": ":material/groups:",
     "ORG Structure": ":material/account_tree:",
@@ -96,8 +94,8 @@ def render_landing() -> None:
             if row_index:
                 st.space(10)
             with st.container(key=f"nav-group-{row_index}"):
-                grid_columns = st.columns(max(4, len(row_sections)))
-                row_columns = grid_columns[1:3] if row_index == 0 else grid_columns[: len(row_sections)]
+                grid_columns = st.columns(3 if row_index == 0 else max(4, len(row_sections)))
+                row_columns = grid_columns[1:2] if row_index == 0 else grid_columns[: len(row_sections)]
                 for column, section in zip(row_columns, row_sections):
                     with column, st.container(key=f"navigation-item-{SECTIONS.index(section)}"):
                         st.button(
@@ -113,7 +111,11 @@ def render_landing() -> None:
 def render_section_header(selected_section: str) -> None:
     if selected_section in _HEADERLESS_SECTIONS:
         return
-    st.title(selected_section)
+    if selected_section == "Attrition":
+        with st.container(key="attrition-heading"):
+            st.title(selected_section)
+    else:
+        st.title(selected_section)
 
 
 def render_sidebar() -> None:

@@ -12,7 +12,6 @@
         [class*="st-key-quick-link-row-"] .ql-num { flex: 0 0 auto; background: #e8eef4; color: #1f4e79; border-radius: 6px; font-size: 0.8rem; font-weight: 800; padding: 0.25rem 0.5rem; }
         [class*="st-key-quick-link-row-"] .ql-name { color: #0b2540; font-size: 1rem; font-weight: 700; line-height: 1.25; }
         [class*="st-key-quick-link-row-"] .ql-sub { color: #3f4f5f; font-size: 0.85rem; margin-top: 0.15rem; }
-        [class*="st-key-quick-link-row-"] .ql-host { color: #8a9598; font-size: 0.72rem; margin-top: 0.2rem; word-break: break-all; }
         [class*="st-key-quick-link-row-"] [data-testid="stLinkButton"] a { background: #1f4e79; border: 1px solid #1f4e79; border-radius: 6px; color: #ffffff; font-weight: 600; }
         [class*="st-key-quick-link-row-"] [data-testid="stLinkButton"] a p { color: #ffffff; }
         [class*="st-key-quick-link-row-"] [data-testid="stLinkButton"] a:hover { background: #163a5c; border-color: #163a5c; color: #ffffff; }

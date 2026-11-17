@@ -208,7 +208,6 @@ def render_team_structure(file_path: str) -> None:
     frame = load_data(file_path)
     with st.sidebar:
         st.toggle("Show XID", value=False, key=_SHOW_XID_KEY)
-    st.markdown("<div class='page-kicker'>SWA workforce intelligence</div>", unsafe_allow_html=True)
     st.markdown("<h1 class='page-title'>Product Delivery Structure</h1>", unsafe_allow_html=True)
     st.markdown("<div class='product-divider'></div>", unsafe_allow_html=True)
 

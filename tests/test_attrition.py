@@ -22,7 +22,7 @@ class AttritionTests(unittest.TestCase):
             ).to_excel(writer, sheet_name="Resource List", index=False)
             pd.DataFrame(
                 [
-                    {"Resource Name": "Attrition person", "Resource Status": " Managed Attrition "},
+                    {"Resource Name": "Attrition person", "Resource Status": " Managed Attrition ", "Portfolio": "CCC"},
                     {"Resource Name": "Another person", "Resource Status": "resigned"},
                     {"Resource Name": "Active person", "Resource Status": "Active Resource"},
                 ]
@@ -36,7 +36,7 @@ class AttritionTests(unittest.TestCase):
         self.assertEqual(attrition.count_by_status(frame), {
             "Resigned": 1, "Managed Attrition": 1, "Unmanaged Attrition": 0
         })
-        self.assertEqual(frame.loc[0, "Portfolio"], "")
+        self.assertEqual(frame.loc[0, "Portfolio"], "CCC")
 
     def test_missing_sheet_is_reported_instead_of_using_resource_list(self):
         with pd.ExcelWriter(self.path, engine="openpyxl") as writer:
@@ -69,6 +69,7 @@ render_attrition({str(self.path)!r})
         app.button(key="attrition_Managed Attrition").click().run()
         self.assertFalse(app.exception)
         self.assertEqual(app.dataframe[0].value["Resource Name"].tolist(), ["Attrition person"])
+        self.assertEqual(app.dataframe[0].value["Portfolio"].tolist(), ["C&C"])
 
 
 if __name__ == "__main__":

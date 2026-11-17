@@ -12,6 +12,19 @@ import streamlit as st
 ACTIVITY_CHART_HEIGHT = 260
 
 
+def _show_summary_chart(chart: go.Figure, selection_key: str | None) -> str | None:
+    if selection_key is None:
+        st.plotly_chart(chart, config={"displayModeBar": False})
+        return None
+    event = st.plotly_chart(
+        chart, key=selection_key, on_select="rerun",
+        selection_mode="points", config={"displayModeBar": False},
+    )
+    if event.selection.points:
+        return str(event.selection.points[-1]["y"])
+    return None
+
+
 def render_summary_chart(
     title: str,
     summary: pd.DataFrame,
@@ -23,7 +36,9 @@ def render_summary_chart(
     heading_class: str | None = None,
     show_heading: bool = True,
     corporate: bool = False,
-) -> None:
+    selection_key: str | None = None,
+    compact: bool = False,
+) -> str | None:
     """Draw a horizontal bar chart from an aggregated summary frame."""
     if not show_heading:
         pass
@@ -54,7 +69,8 @@ def render_summary_chart(
         hovertemplate=f"%{{y}}<br>{value_column}: %{{x}}<extra></extra>",
     )
     chart.update_layout(
-        height=max(420, min(760, 170 + len(visible) * 38)),
+        height=(min(760, 110 + len(visible) * 52) if compact
+                else max(420, min(760, 170 + len(visible) * 38))),
         margin=dict(l=10, r=45, t=20, b=20),
         xaxis_title=value_column,
         yaxis_title=None,
@@ -88,12 +104,11 @@ def render_summary_chart(
                 tickfont=dict(size=13, color="#1f2d3d"),
             ),
         )
-        if visible[value_column].max() <= 5:
+        if compact or visible[value_column].max() <= 5:
             chart.update_xaxes(dtick=1)
         with st.container(border=True, key="summary-chart-card"):
-            st.plotly_chart(chart, config={"displayModeBar": False})
-        return
-    st.plotly_chart(chart, config={"displayModeBar": False})
+            return _show_summary_chart(chart, selection_key)
+    return _show_summary_chart(chart, selection_key)
 
 
 def create_activity_line_chart(

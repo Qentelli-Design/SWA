@@ -7,6 +7,7 @@ import streamlit as st
 
 from common.excel import CACHE_TTL, read_sheet, require_workbook, workbook_token
 from common.styles import inject_css
+from common.text import display_portfolio_name
 
 STATUS_COLUMN = "Resource Status"
 ATTRITION_SHEET = "Attrition"
@@ -52,6 +53,7 @@ def render_attrition(file_path: str) -> None:
     if st.session_state.get(_SELECTED_KEY) not in ATTRITION_STATUSES:
         st.session_state[_SELECTED_KEY] = None
 
+    inject_css("summary_cards.css")
     inject_css("attrition.css")
     with st.container(key="attrition-cards"):
         columns = st.columns(len(ATTRITION_STATUSES))
@@ -69,6 +71,7 @@ def render_attrition(file_path: str) -> None:
 
     selected = st.session_state[_SELECTED_KEY]
     if selected:
-        details = frame[frame[STATUS_COLUMN].str.casefold().eq(selected.casefold())]
+        details = frame.loc[frame[STATUS_COLUMN].str.casefold().eq(selected.casefold()), _DETAIL_COLUMNS].copy()
+        details["Portfolio"] = details["Portfolio"].map(display_portfolio_name)
         st.subheader(selected)
-        st.dataframe(details[_DETAIL_COLUMNS], hide_index=True)
+        st.dataframe(details, hide_index=True)

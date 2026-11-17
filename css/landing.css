@@ -68,5 +68,5 @@
         [class*="st-key-navigation-item-"] { animation: landing-rise 0.5s ease both; }
         .st-key-navigation-item-0, .st-key-navigation-item-1 { animation-delay: 0.05s; }
         .st-key-navigation-item-2, .st-key-navigation-item-3, .st-key-navigation-item-4, .st-key-navigation-item-5 { animation-delay: 0.15s; }
-        .st-key-navigation-item-6, .st-key-navigation-item-7, .st-key-navigation-item-8, .st-key-navigation-item-9 { animation-delay: 0.25s; }
+        .st-key-navigation-item-6, .st-key-navigation-item-7, .st-key-navigation-item-8 { animation-delay: 0.25s; }
         .st-key-landing-hero { animation: landing-rise 0.5s ease both; }

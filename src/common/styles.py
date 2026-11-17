@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Literal
 
 import streamlit as st
 
 from config import BASE_DIR
 
 _STYLE_DIR = BASE_DIR / "css"
+
+
+def dialog_table_height(row_count: int) -> Literal["content"] | int:
+    return "content" if row_count <= 8 else 360
 
 
 @lru_cache(maxsize=16)

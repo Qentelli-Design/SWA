@@ -20,8 +20,6 @@ from config import (
 from org_structure import render_org_structure
 from project_delivery_status import render_project_delivery_status
 from quick_links import render_quick_links
-from releases import render_releases
-from risks import render_risks
 from skills import render_skills
 from team_structure import render_team_structure
 
@@ -46,9 +44,6 @@ _HANDLERS: dict[str, Callable[[], None]] = {
     "ORG Structure": _guarded(render_org_structure, ORG_STRUCTURE_FILE_PATH),
     "Attrition": _guarded(render_attrition, CCC_RESOURCES_FILE_PATH),
     "Project Delivery Status": _guarded(render_project_delivery_status, PROJECT_DELIVERY_STATUS_FILE_PATH),
-    "Releases/Milestones": _guarded(render_releases, PROJECT_DELIVERY_STATUS_FILE_PATH),
-    # The risks view reports its own load errors and leaves rendering errors unhandled.
-    "Risks": lambda: render_risks(PROJECT_DELIVERY_STATUS_FILE_PATH),
     "Offshore Team Skillset": _guarded(render_skills, CCC_RESOURCE_SKILLSET_FILE_PATH),
     "Quick Links": _guarded(render_quick_links, CCC_RESOURCES_FILE_PATH),
     "BAU Performance": _guarded(render_bau_performance, BAU_PERFORMANCE_FILE_PATH),

@@ -37,11 +37,6 @@ def read_excel_frame(path: Path, sheet_name: str | int) -> pd.DataFrame:
     return frame
 
 
-def list_sheet_names(path: Path) -> tuple[str, ...]:
-    with pd.ExcelFile(path, engine="openpyxl") as workbook:
-        return tuple(workbook.sheet_names)
-
-
 @st.cache_data(show_spinner=False, ttl=CACHE_TTL, max_entries=32)
 def read_excel_sheet(file_path: str, mtime_ns: int, size: int, sheet_name: str | int) -> pd.DataFrame:
     """Cached worksheet read. ``mtime_ns`` and ``size`` invalidate stale files."""
@@ -49,23 +44,11 @@ def read_excel_sheet(file_path: str, mtime_ns: int, size: int, sheet_name: str |
     return read_excel_frame(Path(file_path), sheet_name)
 
 
-@st.cache_data(show_spinner=False, ttl=CACHE_TTL, max_entries=12)
-def cached_sheet_names(file_path: str, mtime_ns: int, size: int) -> tuple[str, ...]:
-    del mtime_ns, size
-    return list_sheet_names(Path(file_path))
-
-
 def read_sheet(file_path: str, sheet_name: str | int) -> pd.DataFrame:
     """Read a worksheet, refreshing the cache when the file changes."""
     path = Path(file_path).expanduser()
     resolved, mtime_ns, size = workbook_token(path)
     return read_excel_sheet(resolved, mtime_ns, size, sheet_name)
-
-
-def sheet_names(file_path: str) -> tuple[str, ...]:
-    path = Path(file_path).expanduser()
-    resolved, mtime_ns, size = workbook_token(path)
-    return cached_sheet_names(resolved, mtime_ns, size)
 
 
 def read_resource_list(file_path: str) -> pd.DataFrame:
