@@ -200,6 +200,7 @@ render_project_delivery_status({str(self.path.parent / "missing.xlsx")!r})
 """
         ).run()
         self.assertFalse(app.exception)
+        self.assertTrue(any("Project Delivery Status</h1>" in item.value for item in app.markdown))
         self.assertEqual([button.label for button in app.button], ["Active Releases", "Risks", "Governance"])
         self.assertEqual([button.proto.type for button in app.button], ["secondary"] * 3)
         self.assertFalse(app.error)
@@ -216,6 +217,7 @@ render_project_delivery_status({str(self.path.parent / "missing.xlsx")!r})
         self.assertFalse(any("Project Delivery Status</h1>" in item.value for item in app.markdown))
         app.button(key="delivery_back").click().run()
         self.assertFalse(app.error)
+        self.assertTrue(any("Project Delivery Status</h1>" in item.value for item in app.markdown))
         self.assertEqual([button.label for button in app.button], ["Active Releases", "Risks", "Governance"])
 
     def test_downloads_are_scoped_to_each_portfolio(self):

@@ -1,5 +1,7 @@
         .delivery-title { color: #0b2540; font-size: 1.45rem !important; font-weight: 750; margin: 0.1rem 0 0.7rem; }
         .dialog-product-title { color: #0b2540; font-size: 1rem; font-weight: 700; line-height: 1.15; margin: 0 0 0.35rem; }
+        [data-testid="stVerticalBlock"].st-key-delivery-landing { gap: 60px; }
+        .st-key-delivery-landing .delivery-landing-title { margin: 0; padding: 0; text-align: center; }
 
         [class*="st-key-release-card-delivery-"] { background: #ffffff; border: 1px solid #d5dee6; border-top: 4px solid #1f4e79; border-radius: 8px; box-shadow: 0 1px 4px rgba(15, 37, 64, 0.07); min-height: 190px; padding: 0.6rem 0.75rem; transition: box-shadow 0.15s ease, transform 0.15s ease; }
         [class*="st-key-release-card-delivery-"]:hover { box-shadow: 0 6px 16px rgba(15, 37, 64, 0.14); transform: translateY(-2px); }

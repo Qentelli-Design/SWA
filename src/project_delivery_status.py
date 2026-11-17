@@ -205,18 +205,21 @@ def render_project_delivery_status(file_path: str) -> None:
                 st.error(str(error))
         return
 
-    with st.container(key="delivery-navigation"):
-        sections = ("Active Releases", "Risks", "Governance")
-        for column, section in zip(st.columns(3), sections):
-            with column, st.container(key=f"delivery-nav-{section.lower().replace(' ', '-')}"):
-                st.button(
-                    section,
-                    key=f"delivery_section_{section}",
-                    type="primary" if selected == section else "secondary",
-                    width="stretch",
-                    on_click=_select_delivery_view,
-                    args=(section,),
-                )
+    with st.container(key="delivery-landing"):
+        st.markdown("<h1 class='delivery-title delivery-landing-title'>Project Delivery Status</h1>",
+                    unsafe_allow_html=True)
+        with st.container(key="delivery-navigation"):
+            sections = ("Active Releases", "Risks", "Governance")
+            for column, section in zip(st.columns(3), sections):
+                with column, st.container(key=f"delivery-nav-{section.lower().replace(' ', '-')}"):
+                    st.button(
+                        section,
+                        key=f"delivery_section_{section}",
+                        type="primary" if selected == section else "secondary",
+                        width="stretch",
+                        on_click=_select_delivery_view,
+                        args=(section,),
+                    )
     selected = st.session_state.get(DELIVERY_VIEW_STATE)
     if selected == "Governance":
         st.info("Governance details will be added later.")
